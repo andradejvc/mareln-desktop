@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --color-mare-laranja: #E8590C;
+  --color-mare-rosa: #F43F5E;
+  --color-mare-creme: #FFF8F1;
+}
+
+@theme inline {
+  --font-titulo: var(--font-syne);
+}
+
+body {
+  background: var(--color-mare-creme);
+  color: #1f1f1f;
+  font-family: var(--font-playfair), serif;
+}
