@@ -11,6 +11,7 @@ const syne = Syne({
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair",
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
+      data-scroll-behavior="smooth"
       className={`${syne.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

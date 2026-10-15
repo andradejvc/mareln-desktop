@@ -27,11 +27,17 @@ export default function Navbar() {
 
         {/* Links do desktop */}
         <nav className="hidden gap-8 text-white md:flex">
-          {links.map((link) => (
-            <Link key={link.texto} href={link.href}>
-              {link.texto}
-            </Link>
-          ))}
+          {links.map((link) =>
+            link.href.startsWith("#") ? (
+              <a key={link.texto} href={link.href}>
+                {link.texto}
+              </a>
+            ) : (
+              <Link key={link.texto} href={link.href}>
+                {link.texto}
+              </Link>
+            )
+          )}
         </nav>
 
         {/* Botão Acessar do desktop */}
@@ -58,11 +64,17 @@ export default function Navbar() {
       {/* Menu que abre no celular, centralizado */}
       {aberto && (
         <nav className="absolute left-0 top-full flex w-full flex-col items-center gap-5 bg-mare-laranja px-5 pb-6 pt-2 text-center text-lg text-white shadow-lg md:hidden">
-          {links.map((link) => (
-            <Link key={link.texto} href={link.href} onClick={() => setAberto(false)}>
-              {link.texto}
-            </Link>
-          ))}
+          {links.map((link) =>
+            link.href.startsWith("#") ? (
+              <a key={link.texto} href={link.href} onClick={() => setAberto(false)}>
+                {link.texto}
+              </a>
+            ) : (
+              <Link key={link.texto} href={link.href} onClick={() => setAberto(false)}>
+                {link.texto}
+              </Link>
+            )
+          )}
           <Link
             href="/login"
             onClick={() => setAberto(false)}

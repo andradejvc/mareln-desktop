@@ -58,11 +58,17 @@ export default function Footer() {
         </div>
 
         <nav className="flex flex-wrap justify-center gap-x-6 gap-y-3 text-lg">
-          {links.map((link) => (
-            <Link key={link.texto} href={link.href}>
-              {link.texto}
-            </Link>
-          ))}
+          {links.map((link) =>
+            link.href.startsWith("#") ? (
+              <a key={link.texto} href={link.href}>
+                {link.texto}
+              </a>
+            ) : (
+              <Link key={link.texto} href={link.href}>
+                {link.texto}
+              </Link>
+            )
+          )}
         </nav>
 
         <div className="space-y-2 text-lg">
@@ -88,7 +94,11 @@ export default function Footer() {
           <ul className="mt-3 space-y-2 text-sm">
             {links.map((link) => (
               <li key={link.texto}>
-                <Link href={link.href}>{link.texto}</Link>
+                {link.href.startsWith("#") ? (
+                  <a href={link.href}>{link.texto}</a>
+                ) : (
+                  <Link href={link.href}>{link.texto}</Link>
+                )}
               </li>
             ))}
           </ul>
