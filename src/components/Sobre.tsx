@@ -32,11 +32,11 @@ export default function Sobre() {
           />
 
           <div className="absolute right-0 top-0 h-[67%] w-[64%] overflow-hidden rounded-2xl">
-            <Image src="/image/terceira-img.jpg" alt="Palmeira na praia" fill className="object-cover" />
+            <Image src="/image/terceira-img.jpg" alt="Palmeira na praia" fill sizes="(min-width: 768px) 300px, 70vw" className="object-cover" />
           </div>
 
           <div className="absolute bottom-0 left-0 h-[72%] w-[61%] overflow-hidden rounded-2xl border-8 border-mare-creme">
-            <Image src="/image/segunda-img.jpg" alt="Pessoas em um evento" fill className="object-cover" />
+            <Image src="/image/segunda-img.jpg" alt="Pessoas em um evento" fill sizes="(min-width: 768px) 300px, 65vw" className="object-cover" />
           </div>
         </div>
 

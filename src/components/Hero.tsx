@@ -7,13 +7,7 @@ export default function Hero() {
     <section>
       {/* Foto */}
       <div className="relative h-105 md:h-170">
-        <Image
-          src="/image/primeira-img.jpg"
-          alt="Praia do litoral norte"
-          fill
-          priority
-          className="object-cover"
-        />
+        <Image src="/image/primeira-img.jpg" alt="Praia do litoral norte" fill priority sizes="100vw" className="object-cover" />
 
         {/* Filtro laranja (só no desktop) */}
         <div

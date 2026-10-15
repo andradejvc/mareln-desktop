@@ -62,7 +62,7 @@ export default function Eventos() {
               }`}
             >
               <div className="relative h-32 w-1/2">
-                <Image src={cat.imagem} alt={cat.titulo} fill className="object-cover" />
+                <Image src={cat.imagem} alt={cat.titulo} fill sizes="50vw" className="object-cover" />
               </div>
               <div className="flex w-1/2 flex-col justify-center p-4 text-center text-white">
                 <h3 className="font-titulo text-xl">{cat.titulo}</h3>
@@ -84,7 +84,7 @@ export default function Eventos() {
           {experiencias.map((exp) => (
             <article key={exp.titulo} className="overflow-hidden rounded-2xl bg-white/15">
               <div className="relative aspect-[9/4]">
-                <Image src={exp.imagem} alt={exp.titulo} fill className="object-cover" />
+                <Image src={exp.imagem} alt={exp.titulo} fill sizes="(min-width: 1152px) 368px, 33vw" className="object-cover" />
               </div>
               <div className="p-4 text-white">
                 <h3 className="text-base font-bold">{exp.titulo}</h3>
