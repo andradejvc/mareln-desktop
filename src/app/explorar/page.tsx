@@ -1,3 +1,13 @@
+import Navbar from "@/components/Navbar";
+import ExplorarEventos from "@/components/ExplorarEventos";
+import Footer from "@/components/Footer";
+
 export default function ExplorarPage() {
-  return <h1>Explorar</h1>;
+  return (
+    <>
+      <Navbar />
+      <ExplorarEventos />
+      <Footer />
+    </>
+  );
 }
