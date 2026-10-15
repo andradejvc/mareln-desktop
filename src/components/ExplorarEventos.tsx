@@ -64,7 +64,7 @@ export default function ExplorarEventos() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 py-6 md:py-10">
+    <main className="mx-auto w-full max-w-5xl px-5 py-6 md:py-10 [&_button]:cursor-pointer">
       <h1 className="font-titulo text-3xl font-bold text-mare-rosa md:text-4xl">
         Explorar
       </h1>
