@@ -17,13 +17,16 @@ export default function Navbar() {
   return (
     <header className="relative z-30 bg-mare-laranja">
       <div className="flex items-center justify-between px-5 py-1">
-        <Image
-          src="/image/logo.jpg"
-          alt="Maré LN"
-          width={100}
-          height={100}
-          className="h-20 w-auto md:h-20"
-        />
+        {/* Logo clicável */}
+        <Link href="/" aria-label="Ir para o início" onClick={() => setAberto(false)}>
+          <Image
+            src="/image/logo.jpg"
+            alt="Maré LN"
+            width={100}
+            height={100}
+            className="h-20 w-auto md:h-20"
+          />
+        </Link>
 
         {/* Links do desktop */}
         <nav className="hidden gap-8 text-white md:flex">
