@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function CTA() {
   return (
     <section className="bg-mare-creme px-5 py-16 text-center md:py-24">
-      <h2 className="font-titulo text-4xl font-bold text-mare-laranja md:text-6xl md:text-mare-rosa">
+      <h2 className="font-titulo text-5xl leading-tight text-mare-laranja md:text-7xl md:text-mare-rosa lg:text-8xl">
         Pronto para <br className="hidden md:block" />
         viver o litoral?
       </h2>
@@ -12,7 +12,7 @@ export default function CTA() {
       </p>
       <Link
         href="/registro"
-        className="mt-8 inline-block rounded-2xl bg-mare-rosa px-12 py-4 font-titulo text-2xl font-bold text-white md:rounded-xl md:px-10 md:py-3 md:text-xl"
+        className="mt-8 inline-block rounded-2xl bg-mare-rosa px-12 py-4 font-titulo text-2xl text-white md:rounded-xl md:px-10 md:py-3 md:text-xl md:font-[family-name:var(--font-elsie)] md:font-black"
       >
         Criar conta
       </Link>
