@@ -7,7 +7,7 @@ import Link from "next/link";
 const links = [
   { texto: "Início", href: "/" },
   { texto: "Eventos", href: "/explorar" },
-  { texto: "Sobre", href: "#sobre" },
+  { texto: "Sobre", href: "/#sobre" },
   { texto: "Contato", href: "#contato" },
 ];
 
@@ -28,7 +28,7 @@ export default function Navbar() {
         {/* Links do desktop */}
         <nav className="hidden gap-8 text-white md:flex">
           {links.map((link) =>
-            link.href.startsWith("#") ? (
+            link.href.includes("#") ? (
               <a key={link.texto} href={link.href}>
                 {link.texto}
               </a>
@@ -65,7 +65,7 @@ export default function Navbar() {
       {aberto && (
         <nav className="absolute left-0 top-full flex w-full flex-col items-center gap-5 bg-mare-laranja px-5 pb-6 pt-2 text-center text-lg text-white shadow-lg md:hidden">
           {links.map((link) =>
-            link.href.startsWith("#") ? (
+            link.href.includes("#") ? (
               <a key={link.texto} href={link.href} onClick={() => setAberto(false)}>
                 {link.texto}
               </a>

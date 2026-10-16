@@ -4,7 +4,7 @@ import Link from "next/link";
 const links = [
   { texto: "Início", href: "/" },
   { texto: "Eventos", href: "/explorar" },
-  { texto: "Sobre", href: "#sobre" },
+  { texto: "Sobre", href: "/#sobre" },
   { texto: "Contato", href: "#contato" },
 ];
 
@@ -59,7 +59,7 @@ export default function Footer() {
 
         <nav className="flex flex-wrap justify-center gap-x-6 gap-y-3 text-lg">
           {links.map((link) =>
-            link.href.startsWith("#") ? (
+            link.href.includes("#") ? (
               <a key={link.texto} href={link.href}>
                 {link.texto}
               </a>
@@ -94,7 +94,7 @@ export default function Footer() {
           <ul className="mt-3 space-y-2 text-sm">
             {links.map((link) => (
               <li key={link.texto}>
-                {link.href.startsWith("#") ? (
+                {link.href.includes("#") ? (
                   <a href={link.href}>{link.texto}</a>
                 ) : (
                   <Link href={link.href}>{link.texto}</Link>
