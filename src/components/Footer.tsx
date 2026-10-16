@@ -48,13 +48,13 @@ export default function Footer() {
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-10 text-center md:hidden">
         <div className="flex flex-col items-center">
           <Image
-            src="/image/logo.jpg"
+            src="/image/logo.png"
             alt="Maré LN"
             width={120}
             height={120}
             className="-my-4 h-28 w-auto"
           />
-          <h3 className="mt-4 font-titulo text-3xl font-bold">Maré LN</h3>
+          <h3 className="mt-4 font-titulo text-3xl">Maré LN</h3>
         </div>
 
         <nav className="flex flex-wrap justify-center gap-x-6 gap-y-3 text-lg">
@@ -90,7 +90,7 @@ export default function Footer() {
 
         {/* Navegação */}
         <div>
-          <h4 className="font-titulo text-sm font-bold">Navegação</h4>
+          <h4 className="font-titulo text-sm">Navegação</h4>
           <ul className="mt-3 space-y-2 text-sm">
             {links.map((link) => (
               <li key={link.texto}>
@@ -106,7 +106,7 @@ export default function Footer() {
 
         {/* Suporte */}
         <div>
-          <h4 className="font-titulo text-sm font-bold">Suporte</h4>
+          <h4 className="font-titulo text-sm">Suporte</h4>
           <ul className="mt-3 space-y-2 text-sm">
             {suporte.map((item) => (
               <li key={item}>
@@ -118,7 +118,7 @@ export default function Footer() {
 
         {/* Redes sociais */}
         <div>
-          <h4 className="font-titulo text-sm font-bold">Siga-nos</h4>
+          <h4 className="font-titulo text-sm">Siga-nos</h4>
           <div className="mt-3 flex gap-3">
             <Social href="#" label="Instagram">
               <rect x="3" y="3" width="18" height="18" rx="5" />
