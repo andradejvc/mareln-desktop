@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import OndaDivisor from "@/components/OndaDivisor";
+import OndaDivisor from "@/components/landing/OndaDivisor";
 
 export default function Hero() {
   return (

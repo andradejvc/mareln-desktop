@@ -1,5 +1,5 @@
 import Image from "next/image";
-import OndaDivisor from "@/components/OndaDivisor";
+import OndaDivisor from "@/components/landing/OndaDivisor";
 
 // Cards do MOBILE
 const categorias = [
