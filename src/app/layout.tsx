@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { Syne, Playfair_Display } from "next/font/google";
+import { Cherry_Cream_Soda, Elsie } from "next/font/google";
 import "./globals.css";
 
-const syne = Syne({
+const cherry = Cherry_Cream_Soda({
   subsets: ["latin"],
-  weight: ["700", "800"],
-  variable: "--font-syne",
+  weight: "400",
+  variable: "--font-cherry",
 });
 
-const playfair = Playfair_Display({
+const elsie = Elsie({
   subsets: ["latin"],
-  variable: "--font-playfair",
-  style: ["normal", "italic"],
+  weight: ["400", "900"],
+  variable: "--font-elsie",
 });
 
 export const metadata: Metadata = {
@@ -24,7 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="pt-BR"
       data-scroll-behavior="smooth"
-      className={`${syne.variable} ${playfair.variable} h-full antialiased`}
+      className={`${cherry.variable} ${elsie.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

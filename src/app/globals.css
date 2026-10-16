@@ -7,13 +7,19 @@
 }
 
 @theme inline {
-  --font-titulo: var(--font-syne);
+  --font-titulo: var(--font-cherry);
 }
 
 body {
   background: var(--color-mare-creme);
   color: #1f1f1f;
-  font-family: var(--font-playfair), serif;
+  font-family: var(--font-elsie), serif;
+}
+
+/* A Cherry Cream Soda só existe no peso normal: sem isso o navegador
+   "engrossa" a letra sozinho quando o componente usa font-bold. */
+.font-titulo {
+  font-synthesis: none;
 }
 
 button {
