@@ -49,13 +49,28 @@ export default function Hero() {
       </div>
 
       {/* Faixa rosa só no celular */}
-      <div className="-mt-10 bg-mare-rosa px-6 pb-16 pt-24 text-center [clip-path:polygon(0_12%,100%_0,100%_100%,0_100%)] md:hidden">
-        <Link
-          href="/login"
-          className="inline-block rounded-xl bg-mare-creme px-14 py-3 font-titulo text-3xl text-mare-laranja"
-        >
-          Acessar
-        </Link>
+      <div className="relative -mt-10 md:hidden">
+        {/* Listra fina paralela ao topo da faixa */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 -top-4 h-12 bg-mare-rosa [clip-path:polygon(0_30px,100%_0,100%_8px,0_38px)]"
+        />
+
+        {/* Faixa principal, inclinada em cima e embaixo */}
+        <div className="bg-mare-rosa px-6 pb-20 pt-24 text-center [clip-path:polygon(0_30px,100%_0,100%_calc(100%_-_40px),0_100%)]">
+          <Link
+            href="/login"
+            className="inline-block rounded-xl bg-mare-creme px-14 py-3 font-[family-name:var(--font-elsie)] text-3xl font-black text-mare-rosa"
+          >
+            Acessar
+          </Link>
+
+          {/* Linha branca embaixo do botão */}
+          <span
+            aria-hidden="true"
+            className="mx-auto mt-5 block h-0.75 w-36 rounded-full bg-white"
+          />
+        </div>
       </div>
     </section>
   );
