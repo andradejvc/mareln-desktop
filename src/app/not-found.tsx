@@ -18,14 +18,14 @@ export default function NotFound() {
         />
       </div>
 
-      <div className="flex flex-1 flex-col items-center px-5 pt-10 text-center md:pt-16">
+      <div className="flex flex-1 flex-col items-center mt-25 text-center md:pt-16">
         <h1 className="font-titulo text-8xl font-bold text-mare-laranja md:text-[10rem]">
           404
         </h1>
 
         {/* Faixa laranja com linha fina embaixo */}
         <div className="mt-6 w-full">
-          <p className="font-titulo bg-mare-laranja px-5 py-2 text-lg font-bold text-white md:text-2xl">
+          <p className="font-titulo bg-mare-laranja py-2 text-lg font-bold text-white md:text-2xl">
             Página não encontrada
           </p>
           <div className="mt-1 h-1 bg-mare-laranja" />

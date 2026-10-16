@@ -18,7 +18,7 @@ function Onda({ className = "" }: { className?: string }) {
 
 export default function Sobre() {
   return (
-    <section id="sobre" className="bg-mare-creme text-gray-900">
+    <section id="sobre" className="bg-mare-creme text-gray-900 my-30">
       <div className="mx-auto grid max-w-5xl gap-10 px-5 py-12 md:grid-cols-2 md:items-center md:py-20">
         {/* Fotos sobrepostas */}
         <div className="relative mx-auto aspect-[303/355] w-full max-w-sm md:order-2 md:max-w-md">

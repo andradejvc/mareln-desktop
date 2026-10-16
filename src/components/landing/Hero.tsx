@@ -21,20 +21,15 @@ export default function Hero() {
           aria-hidden="true"
           className="absolute inset-0 hidden bg-mare-laranja/20 mix-blend-multiply md:block"
         />
-        {/* Degradê laranja na parte de baixo (só no desktop) */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-x-0 bottom-0 hidden h-1/4 bg-linear-to-t from-mare-laranja/60 to-transparent md:block"
-        />
 
         {/* Onda na base da foto (só no desktop) */}
-        <OndaDivisor className="absolute inset-x-0 -bottom-px z-10 hidden h-10 w-full text-mare-creme md:block md:h-16" />
+        <OndaDivisor className="absolute inset-x-0 -bottom-px z-10 hidden w-full text-mare-creme md:block md:h-16" />
 
         <div className="relative z-10 flex flex-col items-center pt-20 text-center md:pt-48">
-          <h1 className="font-titulo text-6xl leading-none text-mare-laranja md:text-8xl lg:text-[10rem]">
+          <h1 className="font-titulo text-6xl leading-none text-mare-laranja/80 md:text-8xl lg:text-[10rem]">
             Maré LN
           </h1>
-          <p className="mt-3 text-lg text-gray-800 md:mt-4 md:text-2xl md:text-white">
+          <p className="text-lg text-gray-800 md:mt-4 md:text-2xl md:text-white">
             Levando você a descobrir o litoral
           </p>
 

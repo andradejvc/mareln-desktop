@@ -75,7 +75,7 @@ export default function AuthCard({ titulo, subtitulo, children }: AuthCardProps)
         <h1 className="font-titulo mt-4 text-center text-xl font-bold text-mare-laranja underline underline-offset-4 md:text-2xl">
           {titulo}
         </h1>
-        <p className="font-titulo mt-2 max-w-xs text-center text-xs font-bold text-mare-laranja md:text-sm">
+        <p className="font-titulo mt-2 max-w-xs text-center text-xs text-mare-laranja md:text-sm">
           {subtitulo}
         </p>
 
