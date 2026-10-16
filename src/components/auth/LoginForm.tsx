@@ -2,6 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import AuthInput from "./AuthInput";
 import GoogleButton from "./GoogleButton";
 import Divisor from "./Divisor";
@@ -11,10 +13,15 @@ export default function LoginForm() {
     const [senha, setSenha] = useState("");
     const [lembrar, setLembrar] = useState(false);
 
+    const router = useRouter();
+
     function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        // TODO: integrar com a autenticação (API) aqui
-        console.log({ email, senha, lembrar });
+
+        // Temporário: substituir pela autenticação real depois
+        localStorage.setItem("isLogged", "true");
+
+        router.push("/dashboard");
     }
 
     return (
@@ -30,6 +37,7 @@ export default function LoginForm() {
                     value={email}
                     onChange={setEmail}
                 />
+
                 <AuthInput
                     id="senha"
                     name="senha"
@@ -51,6 +59,7 @@ export default function LoginForm() {
                         />
                         Lembre-se
                     </label>
+
                     <Link
                         href="#"
                         className="font-semibold text-mare-laranja underline underline-offset-2"
@@ -68,6 +77,7 @@ export default function LoginForm() {
             </form>
 
             <Divisor />
+
             <GoogleButton />
 
             <p className="mt-6 text-center text-xs text-gray-500">
