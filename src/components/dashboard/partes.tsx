@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { CategoriaDashboard, EventoDashboard } from "@/data/dashboard";
+import type { CategoriaDashboard } from "@/data/dashboard";
 import { IconeCoracao, IconeSeta } from "./icons";
 
 const corDaCategoria: Record<CategoriaDashboard, string> = {
@@ -39,7 +39,7 @@ export function BotaoFavorito({
   escuro = false,
   className = "",
 }: {
-  evento: EventoDashboard;
+  evento: { id: number; titulo: string };
   ativo: boolean;
   onAlternar: (id: number) => void;
   escuro?: boolean;

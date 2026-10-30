@@ -12,13 +12,18 @@ type Props = {
   nomeUsuario: string;
   totalFavoritos: number;
   notificacoes?: number;
+  /** Rótulo da aba atual (ex.: "Início", "Explorar"). */
+  paginaAtiva?: string;
+  /** Opcional: deixa a busca da navbar controlada pela página. */
+  busca?: string;
+  onBusca?: (valor: string) => void;
 };
 
 const links = [
-  { href: "/dashboard", label: "Início", Icone: IconeInicio, ativo: true },
+  { href: "/dashboard", label: "Início", Icone: IconeInicio },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
   { href: "/explorar", label: "Mapa", Icone: IconeSeta },
-  { href: "#favoritos", label: "Favoritos", Icone: IconeCoracao, favoritos: true },
+  { href: "/dashboard#favoritos", label: "Favoritos", Icone: IconeCoracao, favoritos: true },
   { href: "/login", label: "Perfil", Icone: IconeUsuario },
 ];
 
@@ -26,6 +31,9 @@ export default function DashboardNavbar({
   nomeUsuario,
   totalFavoritos,
   notificacoes = 0,
+  paginaAtiva = "Início",
+  busca,
+  onBusca,
 }: Props) {
   return (
     <header className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2.5 shadow-md shadow-orange-900/5 sm:px-4">
@@ -42,26 +50,29 @@ export default function DashboardNavbar({
         aria-label="Principal"
         className="flex items-center gap-1 rounded-xl bg-stone-100 p-1"
       >
-        {links.map(({ href, label, Icone, ativo, favoritos }) => (
-          <Link
-            key={label}
-            href={href}
-            aria-current={ativo ? "page" : undefined}
-            className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors sm:px-3 ${
-              ativo
-                ? "bg-white text-mare-laranja shadow-sm"
-                : "text-stone-500 hover:text-stone-800"
-            }`}
-          >
-            <Icone size={16} />
-            <span className="hidden lg:inline">{label}</span>
-            {favoritos && totalFavoritos > 0 && (
-              <span className="hidden rounded-full bg-mare-rosa/15 px-1.5 text-[10px] font-bold text-mare-rosa lg:inline">
-                {totalFavoritos}
-              </span>
-            )}
-          </Link>
-        ))}
+        {links.map(({ href, label, Icone, favoritos }) => {
+          const ativo = label === paginaAtiva;
+          return (
+            <Link
+              key={label}
+              href={href}
+              aria-current={ativo ? "page" : undefined}
+              className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors sm:px-3 ${
+                ativo
+                  ? "bg-white text-mare-laranja shadow-sm"
+                  : "text-stone-500 hover:text-stone-800"
+              }`}
+            >
+              <Icone size={16} />
+              <span className="hidden lg:inline">{label}</span>
+              {favoritos && totalFavoritos > 0 && (
+                <span className="hidden rounded-full bg-mare-rosa/15 px-1.5 text-[10px] font-bold text-mare-rosa lg:inline">
+                  {totalFavoritos}
+                </span>
+              )}
+            </Link>
+          );
+        })}
       </nav>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -70,6 +81,8 @@ export default function DashboardNavbar({
           <span className="sr-only">Buscar eventos</span>
           <input
             type="search"
+            value={busca}
+            onChange={onBusca ? (e) => onBusca(e.target.value) : undefined}
             placeholder="Buscar..."
             className="w-24 bg-transparent text-xs outline-none placeholder:text-stone-400"
           />

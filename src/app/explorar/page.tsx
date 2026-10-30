@@ -1,13 +1,10 @@
-import Navbar from "@/components/Navbar";
-import ExplorarEventos from "@/components/ExplorarEventos";
-import Footer from "@/components/Footer";
+import type { Metadata } from "next";
+import ExplorarView from "@/components/explorar/ExplorarView";
+
+export const metadata: Metadata = {
+  title: "Explorar | Maré LN",
+};
 
 export default function ExplorarPage() {
-  return (
-    <>
-      <Navbar />
-      <ExplorarEventos />
-      <Footer />
-    </>
-  );
+  return <ExplorarView />;
 }
