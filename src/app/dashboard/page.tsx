@@ -1,3 +1,14 @@
+import type { Metadata } from "next";
+import DashboardView from "@/components/dashboard/DashboardView";
+
+export const metadata: Metadata = {
+  title: "Início | Maré LN",
+};
+
 export default function DashboardPage() {
-  return <h1>Dashboard</h1>;
+  return (
+    <main>
+      <DashboardView />
+    </main>
+  );
 }
