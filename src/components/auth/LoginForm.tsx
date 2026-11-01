@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { lerUsuario, nomeDoEmail, salvarUsuario } from "@/lib/usuario";
 import AuthInput from "./AuthInput";
 import GoogleButton from "./GoogleButton";
 import Divisor from "./Divisor";
@@ -37,6 +38,13 @@ export default function LoginForm() {
       setErros({ senha: "Email ou senha incorretos." });
       return;
     }
+
+    // Guarda só nome e e-mail (nunca a senha) para o dashboard usar.
+    const emailLimpo = email.trim().toLowerCase();
+    const salvo = lerUsuario();
+    const nome =
+      salvo && salvo.email === emailLimpo ? salvo.nome : nomeDoEmail(emailLimpo);
+    salvarUsuario({ nome, email: emailLimpo });
 
     router.push("/dashboard");
   }

@@ -9,9 +9,9 @@ import {
   eventosDashboard,
   favoritosIniciais,
   sugestoesIds,
-  usuario,
   type EventoDashboard,
 } from "@/data/dashboard";
+import { useUsuario } from "@/lib/usuario";
 import DashboardMobile from "./DashboardMobile";
 import DashboardNavbar from "./DashboardNavbar";
 import { IconeCalendario, IconeCoracao, IconePino } from "./icons";
@@ -61,8 +61,11 @@ function CardSidebar({
 }
 
 export default function DashboardView() {
+  const usuario = useUsuario();
+  const nomeUsuario = usuario?.nome ?? "Visitante";
   const [cidade, setCidade] = useState<Cidade | null>(null);
   const [favoritos, setFavoritos] = useState<number[]>(favoritosIniciais);
+
 
   function alternarFavorito(id: number) {
     setFavoritos((atual) =>
@@ -85,7 +88,7 @@ export default function DashboardView() {
       {/* ================= MOBILE (abaixo de 1024px) ================= */}
       <div className="lg:hidden">
         <DashboardMobile
-          nomeUsuario={usuario.nome}
+          nomeUsuario={nomeUsuario}
           notificacoes={3}
           cidade={cidade}
           onCidade={setCidade}
@@ -101,7 +104,7 @@ export default function DashboardView() {
       {/* ================= DESKTOP (1024px ou mais) ================= */}
       <div className="mx-auto hidden w-full max-w-7xl px-6 py-5 lg:block">
         <DashboardNavbar
-          nomeUsuario={usuario.nome}
+          nomeUsuario={nomeUsuario}
           totalFavoritos={favoritos.length}
           notificacoes={3}
         />
@@ -113,7 +116,7 @@ export default function DashboardView() {
               {dataDeHoje}
             </p>
             <h1 className="font-titulo mt-1 text-4xl xl:text-5xl">
-              Oi, {usuario.nome}!
+              Oi, {nomeUsuario}!
             </h1>
             <p className="mt-1 text-sm text-stone-500">
               O que vamos descobrir hoje no litoral?
@@ -264,11 +267,10 @@ export default function DashboardView() {
                         type="button"
                         aria-pressed={ativa}
                         onClick={() => setCidade(ativa ? null : c)}
-                        className={`flex w-full items-center justify-between rounded-lg px-2 py-2 text-sm transition-colors ${
-                          ativa
-                            ? "bg-mare-laranja/10 font-bold text-mare-laranja"
-                            : "text-stone-600 hover:bg-stone-50"
-                        }`}
+                        className={`flex w-full items-center justify-between rounded-lg px-2 py-2 text-sm transition-colors ${ativa
+                          ? "bg-mare-laranja/10 font-bold text-mare-laranja"
+                          : "text-stone-600 hover:bg-stone-50"
+                          }`}
                       >
                         <span className="flex items-center gap-2.5">
                           <IconePino size={14} className="text-stone-400" />

@@ -10,7 +10,7 @@ import {
   type Categoria,
   type Cidade,
 } from "@/data/eventos";
-import { usuario } from "@/data/dashboard";
+import { useUsuario } from "@/lib/usuario";
 import DashboardNavbar from "../dashboard/DashboardNavbar";
 import { IconeBusca, IconePino } from "../dashboard/icons";
 import { BotaoFavorito } from "../dashboard/partes";
@@ -37,6 +37,7 @@ function combina(
 // Uma tela só: o mesmo JSX serve para celular e desktop.
 // O que muda de um para o outro usa as classes responsivas (lg:).
 export default function ExplorarView() {
+  const usuario = useUsuario();
   const [busca, setBusca] = useState("");
   const [cidade, setCidade] = useState<Cidade | null>(null);
   const [categoria, setCategoria] = useState<Categoria | null>(null);
@@ -66,7 +67,7 @@ export default function ExplorarView() {
       <CabecalhoMobile notificacoes={NOTIFICACOES} />
       <div className="hidden lg:block">
         <DashboardNavbar
-          nomeUsuario={usuario.nome}
+          nomeUsuario={usuario?.nome ?? "Visitante"}
           totalFavoritos={favoritos.length}
           notificacoes={NOTIFICACOES}
           paginaAtiva="Explorar"

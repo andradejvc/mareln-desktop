@@ -2,6 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { salvarUsuario } from "@/lib/usuario";
 import AuthInput from "./AuthInput";
 import GoogleButton from "./GoogleButton";
 import Divisor from "./Divisor";
@@ -12,21 +14,28 @@ export default function RegistroForm() {
   const [senha, setSenha] = useState("");
   const [confirmar, setConfirmar] = useState("");
   const [erro, setErro] = useState("");
+  const router = useRouter();
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!usuario.trim()) {
+      setErro("Informe um nome de usuário.");
+      return;
+    }
     if (senha !== confirmar) {
       setErro("As senhas não coincidem.");
       return;
     }
     setErro("");
-    // TODO: integrar com o cadastro (API) aqui
-    console.log({ usuario, email, senha });
+    // TODO: integrar com o cadastro (API) aqui.
+    // Por enquanto guarda só nome e e-mail (nunca a senha) no navegador.
+    salvarUsuario({ nome: usuario.trim(), email: email.trim().toLowerCase() });
+    router.push("/dashboard");
   }
 
   return (
     <>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <AuthInput
           id="usuario"
           name="usuario"
@@ -75,7 +84,7 @@ export default function RegistroForm() {
 
         <button
           type="submit"
-                    className="font-titulo mt-1 w-full rounded-xl bg-mare-laranja/25 px-4 py-2.5 text-base font-bold text-mare-laranja underline underline-offset-4 transition hover:bg-mare-laranja hover:text-white"
+          className="font-titulo mt-1 w-full rounded-xl bg-mare-laranja/25 px-4 py-2.5 text-base font-bold text-mare-laranja underline underline-offset-4 transition hover:bg-mare-laranja hover:text-white"
         >
           Criar Conta
         </button>
