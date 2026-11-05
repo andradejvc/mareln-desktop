@@ -13,7 +13,6 @@ import {
 
 type Props = {
   notificacoes: number;
-  /** "carregando" = ainda lendo o navegador, "visitante" = ninguém logado. */
   sessao?: "carregando" | "visitante" | "logado";
 };
 
@@ -28,19 +27,24 @@ const menuLogado: ItemMenu[] = [
   { href: "/dashboard", label: "Início", Icone: IconeInicio },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca, ativo: true },
   { href: "/explorar", label: "Mapa", Icone: IconeSeta },
-  { href: "/dashboard#favoritos-mobile", label: "Favoritos", Icone: IconeCoracao },
-  { href: "/login", label: "Perfil", Icone: IconeUsuario },
+  {
+    href: "/dashboard#favoritos-mobile",
+    label: "Favoritos",
+    Icone: IconeCoracao,
+  },
+  { href: "/dashboard", label: "Perfil", Icone: IconeUsuario },
 ];
 
-// Quem não está logado não vê Favoritos nem Perfil, e o "Início" é a landing.
 const menuVisitante: ItemMenu[] = [
   { href: "/", label: "Início", Icone: IconeInicio },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca, ativo: true },
   { href: "/explorar", label: "Mapa", Icone: IconeSeta },
 ];
 
-// Faixa laranja do celular. No desktop quem aparece é a DashboardNavbar.
-export default function CabecalhoMobile({ notificacoes, sessao = "logado" }: Props) {
+export default function CabecalhoMobile({
+  notificacoes,
+  sessao = "logado",
+}: Props) {
   const [aberto, setAberto] = useState(false);
   const logado = sessao === "logado";
   const menu = logado ? menuLogado : menuVisitante;
@@ -55,10 +59,13 @@ export default function CabecalhoMobile({ notificacoes, sessao = "logado" }: Pro
         {logado ? (
           <button
             type="button"
-            aria-label={`Notificações${notificacoes ? ` (${notificacoes} novas)` : ""}`}
+            aria-label={`Notificações${
+              notificacoes ? ` (${notificacoes} novas)` : ""
+            }`}
             className="relative grid size-11 place-items-center rounded-full bg-white/20"
           >
             <IconeSino size={20} />
+
             {notificacoes > 0 && (
               <span className="absolute -right-0.5 -top-0.5 grid size-5 place-items-center rounded-full bg-mare-rosa text-[10px] font-bold">
                 {notificacoes}
@@ -92,7 +99,11 @@ export default function CabecalhoMobile({ notificacoes, sessao = "logado" }: Pro
             strokeLinecap="round"
             aria-hidden="true"
           >
-            {aberto ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+            {aberto ? (
+              <path d="M6 6l12 12M18 6 6 18" />
+            ) : (
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            )}
           </svg>
         </button>
       </div>
@@ -111,7 +122,9 @@ export default function CabecalhoMobile({ notificacoes, sessao = "logado" }: Pro
                   aria-current={ativo ? "page" : undefined}
                   onClick={() => setAberto(false)}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${
-                    ativo ? "bg-mare-laranja/10 font-bold text-mare-laranja" : "hover:bg-stone-50"
+                    ativo
+                      ? "bg-mare-laranja/10 font-bold text-mare-laranja"
+                      : "hover:bg-stone-50"
                   }`}
                 >
                   <Icone size={18} />
@@ -129,6 +142,7 @@ export default function CabecalhoMobile({ notificacoes, sessao = "logado" }: Pro
                 >
                   Entrar
                 </Link>
+
                 <Link
                   href="/registro"
                   onClick={() => setAberto(false)}

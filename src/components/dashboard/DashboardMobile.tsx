@@ -30,10 +30,9 @@ const abas = [
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
   { href: "/explorar", label: "Mapa", Icone: IconeSeta },
   { href: "#favoritos-mobile", label: "Favoritos", Icone: IconeCoracao },
-  { href: "/login", label: "Perfil", Icone: IconeUsuario },
+  { href: "/dashboard", label: "Perfil", Icone: IconeUsuario },
 ];
 
-// Faixa horizontal que rola de lado (cards "compactos").
 const faixa =
   "flex snap-x gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
@@ -47,6 +46,7 @@ function TituloSecao({
   return (
     <div className="mb-3 flex items-center justify-between px-5">
       <h2 className="font-titulo text-2xl">{titulo}</h2>
+
       {acao && (
         <Link href={acao.href} className="text-sm font-bold text-mare-rosa">
           {acao.label}
@@ -81,11 +81,13 @@ function CardMobile({
           sizes={compacto ? "224px" : "(min-width: 640px) 576px, 100vw"}
           className="object-cover"
         />
+
         {evento.hoje && (
           <span className="absolute left-2.5 top-2.5 rounded-md bg-mare-rosa px-2 py-0.5 text-[11px] font-bold text-white">
             HOJE
           </span>
         )}
+
         <BotaoFavorito
           evento={evento}
           ativo={favorito}
@@ -102,10 +104,13 @@ function CardMobile({
         >
           {evento.titulo}
         </h3>
+
         <Chip categoria={evento.categoria} mobile />
+
         <p className="text-xs text-stone-500">
           {evento.data} • {evento.hora}
         </p>
+
         <p className={`text-xs text-stone-500 ${compacto ? "truncate" : ""}`}>
           {evento.local}, {evento.cidade}
         </p>
@@ -135,9 +140,11 @@ export default function DashboardMobile({
             <p className="text-xs uppercase tracking-[0.2em] text-white/80">
               Bem-vindo de volta
             </p>
+
             <h1 className="mt-1 text-3xl font-bold">
               Oi, {nomeUsuario}! <span aria-hidden="true">👋</span>
             </h1>
+
             <p className="mt-1 text-sm text-white/90">
               O que vamos descobrir hoje?
             </p>
@@ -145,10 +152,13 @@ export default function DashboardMobile({
 
           <button
             type="button"
-            aria-label={`Notificações${notificacoes ? ` (${notificacoes} novas)` : ""}`}
+            aria-label={`Notificações${
+              notificacoes ? ` (${notificacoes} novas)` : ""
+            }`}
             className="relative grid size-11 shrink-0 place-items-center rounded-full bg-white/20"
           >
             <IconeSino size={20} />
+
             {notificacoes > 0 && (
               <span className="absolute -right-0.5 -top-0.5 grid size-5 place-items-center rounded-full bg-mare-rosa text-[10px] font-bold">
                 {notificacoes}
@@ -160,6 +170,7 @@ export default function DashboardMobile({
         <label className="mt-5 flex items-center gap-2.5 rounded-full bg-white px-4 py-3 text-stone-400 shadow-sm">
           <IconeBusca size={18} />
           <span className="sr-only">Buscar eventos</span>
+
           <input
             type="search"
             placeholder="Buscar eventos..."
@@ -168,7 +179,7 @@ export default function DashboardMobile({
         </label>
       </header>
 
-      {/* Cidades (rolagem lateral) */}
+      {/* Cidades */}
       <div
         role="group"
         aria-label="Filtrar por cidade"
@@ -176,6 +187,7 @@ export default function DashboardMobile({
       >
         {cidades.map((c) => {
           const ativa = cidade === c;
+
           return (
             <button
               key={c}
@@ -183,7 +195,9 @@ export default function DashboardMobile({
               aria-pressed={ativa}
               onClick={() => onCidade(ativa ? null : c)}
               className={`shrink-0 rounded-full border-2 border-mare-laranja px-4 py-1.5 text-sm font-bold ${
-                ativa ? "bg-mare-laranja text-white" : "bg-white text-mare-laranja"
+                ativa
+                  ? "bg-mare-laranja text-white"
+                  : "bg-white text-mare-laranja"
               }`}
             >
               {c}
@@ -200,6 +214,7 @@ export default function DashboardMobile({
               titulo="Acontecendo hoje"
               acao={{ href: "/explorar", label: "Ver tudo →" }}
             />
+
             <div className={faixa}>
               {hoje.map((e) => (
                 <CardMobile
@@ -217,6 +232,7 @@ export default function DashboardMobile({
         {/* Pode te interessar */}
         <section aria-label="Pode te interessar">
           <TituloSecao titulo="Pode te interessar" />
+
           <div className="space-y-3 px-5">
             {sugestoes.slice(0, 2).map((e) => (
               <CardMobile
@@ -230,11 +246,16 @@ export default function DashboardMobile({
         </section>
 
         {/* Meus favoritos */}
-        <section id="favoritos-mobile" aria-label="Meus favoritos" className="scroll-mt-4">
+        <section
+          id="favoritos-mobile"
+          aria-label="Meus favoritos"
+          className="scroll-mt-4"
+        >
           <TituloSecao
             titulo="Meus favoritos"
             acao={{ href: "#favoritos-mobile", label: "Ver todos →" }}
           />
+
           {meusFavoritos.length === 0 ? (
             <p className="px-5 text-sm text-stone-500">
               Toque no coração de um evento para guardá-lo aqui.
@@ -257,6 +278,7 @@ export default function DashboardMobile({
         {/* Próximos eventos */}
         <section aria-label="Próximos eventos">
           <TituloSecao titulo="Próximos eventos" />
+
           <div className="space-y-3 px-5">
             {proximos.length === 0 ? (
               <p className="rounded-2xl bg-white p-6 text-center text-sm text-stone-500">
@@ -283,6 +305,7 @@ export default function DashboardMobile({
           >
             Ver todos os eventos →
           </Link>
+
           <BannerMapa linha className="h-24" />
         </div>
       </div>

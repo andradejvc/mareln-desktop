@@ -9,14 +9,11 @@ import {
 } from "./icons";
 
 type Props = {
-  /** "carregando" = ainda lendo o navegador, "visitante" = ninguém logado. */
   sessao?: "carregando" | "visitante" | "logado";
   nomeUsuario?: string;
   totalFavoritos?: number;
   notificacoes?: number;
-  /** Rótulo da aba atual (ex.: "Início", "Explorar"). */
   paginaAtiva?: string;
-  /** Opcional: deixa a busca da navbar controlada pela página. */
   busca?: string;
   onBusca?: (valor: string) => void;
 };
@@ -32,11 +29,15 @@ const linksLogado: ItemMenu[] = [
   { href: "/dashboard", label: "Início", Icone: IconeInicio },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
   { href: "/explorar", label: "Mapa", Icone: IconeSeta },
-  { href: "/dashboard#favoritos", label: "Favoritos", Icone: IconeCoracao, favoritos: true },
-  { href: "/login", label: "Perfil", Icone: IconeUsuario },
+  {
+    href: "/dashboard#favoritos",
+    label: "Favoritos",
+    Icone: IconeCoracao,
+    favoritos: true,
+  },
+  { href: "/dashboard", label: "Perfil", Icone: IconeUsuario },
 ];
 
-// Quem não está logado não vê Favoritos nem Perfil, e o "Início" é a landing.
 const linksVisitante: ItemMenu[] = [
   { href: "/", label: "Início", Icone: IconeInicio },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
@@ -61,7 +62,10 @@ export default function DashboardNavbar({
         sessao === "carregando" ? "invisible" : ""
       }`}
     >
-      <Link href={logado ? "/dashboard" : "/"} className="flex shrink-0 items-center gap-2.5">
+      <Link
+        href={logado ? "/dashboard" : "/"}
+        className="flex shrink-0 items-center gap-2.5"
+      >
         <span className="font-titulo grid size-9 place-items-center rounded-xl bg-mare-laranja text-lg font-extrabold text-white">
           M
         </span>
@@ -76,6 +80,7 @@ export default function DashboardNavbar({
       >
         {links.map(({ href, label, Icone, favoritos }) => {
           const ativo = label === paginaAtiva;
+
           return (
             <Link
               key={label}
@@ -89,6 +94,7 @@ export default function DashboardNavbar({
             >
               <Icone size={16} />
               <span className="hidden lg:inline">{label}</span>
+
               {favoritos && totalFavoritos > 0 && (
                 <span className="hidden rounded-full bg-mare-rosa/15 px-1.5 text-[10px] font-bold text-mare-rosa lg:inline">
                   {totalFavoritos}
@@ -116,10 +122,13 @@ export default function DashboardNavbar({
           <>
             <button
               type="button"
-              aria-label={`Notificações${notificacoes ? ` (${notificacoes} novas)` : ""}`}
+              aria-label={`Notificações${
+                notificacoes ? ` (${notificacoes} novas)` : ""
+              }`}
               className="relative grid size-9 place-items-center rounded-full text-stone-500 hover:bg-stone-100"
             >
               <IconeSino size={18} />
+
               {notificacoes > 0 && (
                 <span className="absolute right-0.5 top-0.5 grid size-4 place-items-center rounded-full bg-mare-rosa text-[9px] font-bold text-white">
                   {notificacoes}
@@ -139,6 +148,7 @@ export default function DashboardNavbar({
             >
               Entrar
             </Link>
+
             <Link
               href="/registro"
               className="hidden rounded-full bg-mare-laranja px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 sm:block"
