@@ -26,7 +26,13 @@ function Miniatura({
 }) {
   return (
     <div className={`relative shrink-0 overflow-hidden rounded-lg ${tamanho}`}>
-      <Image src={evento.imagem} alt="" fill sizes="48px" className="object-cover" />
+      <Image
+        src={evento.imagem}
+        alt=""
+        fill
+        sizes="48px"
+        className="object-cover"
+      />
     </div>
   );
 }
@@ -49,12 +55,17 @@ function CardSidebar({
     >
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-titulo text-xl">{titulo}</h2>
+
         {acao && (
-          <Link href={acao.href} className="text-xs font-medium text-mare-rosa hover:underline">
+          <Link
+            href={acao.href}
+            className="text-xs font-medium text-mare-rosa hover:underline"
+          >
             {acao.label}
           </Link>
         )}
       </div>
+
       {children}
     </section>
   );
@@ -63,9 +74,9 @@ function CardSidebar({
 export default function DashboardView() {
   const usuario = useUsuario();
   const nomeUsuario = usuario?.nome ?? "Visitante";
+
   const [cidade, setCidade] = useState<Cidade | null>(null);
   const [favoritos, setFavoritos] = useState<number[]>(favoritosIniciais);
-
 
   function alternarFavorito(id: number) {
     setFavoritos((atual) =>
@@ -75,11 +86,17 @@ export default function DashboardView() {
 
   const hoje = eventosDashboard.filter((e) => e.hoje);
   const [destaque, ...outrosHoje] = hoje;
+
   const proximos = eventosDashboard.filter(
     (e) => !e.hoje && (!cidade || e.cidade === cidade),
   );
-  const meusFavoritos = eventosDashboard.filter((e) => favoritos.includes(e.id));
+
+  const meusFavoritos = eventosDashboard.filter((e) =>
+    favoritos.includes(e.id),
+  );
+
   const sugestoes = eventosDashboard.filter((e) => sugestoesIds.includes(e.id));
+
   const contagem = (c: Cidade) =>
     eventosDashboard.filter((e) => e.cidade === c).length;
 
@@ -89,7 +106,6 @@ export default function DashboardView() {
       <div className="lg:hidden">
         <DashboardMobile
           nomeUsuario={nomeUsuario}
-          notificacoes={3}
           cidade={cidade}
           onCidade={setCidade}
           favoritos={favoritos}
@@ -106,7 +122,6 @@ export default function DashboardView() {
         <DashboardNavbar
           nomeUsuario={nomeUsuario}
           totalFavoritos={favoritos.length}
-          notificacoes={3}
         />
 
         {/* Saudação */}
@@ -115,13 +130,16 @@ export default function DashboardView() {
             <p className="text-xs uppercase tracking-[0.18em] text-stone-400">
               {dataDeHoje}
             </p>
+
             <h1 className="font-titulo mt-1 text-4xl xl:text-5xl">
               Oi, {nomeUsuario}!
             </h1>
+
             <p className="mt-1 text-sm text-stone-500">
               O que vamos descobrir hoje no litoral?
             </p>
           </div>
+
           <Link
             href="/explorar"
             className="rounded-xl border-2 border-mare-laranja px-5 py-2.5 text-sm font-bold text-mare-laranja transition-colors hover:bg-mare-laranja hover:text-white"
@@ -140,6 +158,7 @@ export default function DashboardView() {
                   <h2 id="titulo-hoje" className="font-titulo text-2xl">
                     Acontecendo hoje
                   </h2>
+
                   <span className="rounded-full bg-mare-rosa/15 px-3 py-1 text-xs font-bold text-mare-rosa">
                     {hoje.length} {hoje.length === 1 ? "evento" : "eventos"}
                   </span>
@@ -153,10 +172,13 @@ export default function DashboardView() {
                     sizes="(min-width: 1280px) 800px, 640px"
                     className="object-cover"
                   />
+
                   <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/20 to-black/30" />
+
                   <span className="absolute left-4 top-4 rounded-full bg-mare-rosa px-3.5 py-1 text-xs font-bold text-white">
                     HOJE • {destaque.hora}
                   </span>
+
                   <BotaoFavorito
                     evento={destaque}
                     ativo={favoritos.includes(destaque.id)}
@@ -164,9 +186,14 @@ export default function DashboardView() {
                     escuro
                     className="absolute right-4 top-4"
                   />
+
                   <div className="absolute inset-x-0 bottom-0 p-5 text-white">
                     <Chip categoria={destaque.categoria} />
-                    <h3 className="mt-2 text-3xl font-bold">{destaque.titulo}</h3>
+
+                    <h3 className="mt-2 text-3xl font-bold">
+                      {destaque.titulo}
+                    </h3>
+
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-white/80">
                       <IconePino size={14} />
                       {destaque.local}, {destaque.cidade}
@@ -180,11 +207,20 @@ export default function DashboardView() {
                     className="mt-3 flex max-w-sm overflow-hidden rounded-xl bg-white shadow-sm shadow-orange-900/5"
                   >
                     <div className="relative w-20 shrink-0">
-                      <Image src={e.imagem} alt="" fill sizes="80px" className="object-cover" />
+                      <Image
+                        src={e.imagem}
+                        alt=""
+                        fill
+                        sizes="80px"
+                        className="object-cover"
+                      />
                     </div>
+
                     <div className="p-3">
                       <Chip categoria={e.categoria} />
+
                       <h3 className="mt-1.5 text-sm font-bold">{e.titulo}</h3>
+
                       <p className="mt-0.5 text-xs text-stone-500">
                         {e.hora} • {e.cidade}
                       </p>
@@ -199,13 +235,18 @@ export default function DashboardView() {
               <div className="mb-4 flex items-center justify-between">
                 <h2 id="titulo-proximos" className="font-titulo text-2xl">
                   Próximos eventos
+
                   {cidade && (
                     <span className="ml-2 font-sans text-sm text-stone-500">
                       em {cidade}
                     </span>
                   )}
                 </h2>
-                <Link href="/explorar" className="text-sm font-medium text-mare-laranja hover:underline">
+
+                <Link
+                  href="/explorar"
+                  className="text-sm font-medium text-mare-laranja hover:underline"
+                >
                   Ver todos →
                 </Link>
               </div>
@@ -229,6 +270,7 @@ export default function DashboardView() {
                           sizes="(min-width: 1280px) 280px, 300px"
                           className="object-cover"
                         />
+
                         <BotaoFavorito
                           evento={e}
                           ativo={favoritos.includes(e.id)}
@@ -236,13 +278,19 @@ export default function DashboardView() {
                           className="absolute right-2.5 top-2.5"
                         />
                       </div>
+
                       <div className="space-y-2 p-4">
                         <Chip categoria={e.categoria} />
-                        <h3 className="text-sm font-bold leading-snug">{e.titulo}</h3>
+
+                        <h3 className="text-sm font-bold leading-snug">
+                          {e.titulo}
+                        </h3>
+
                         <p className="flex items-center gap-1.5 text-xs text-stone-500">
                           <IconeCalendario size={13} />
                           {e.data} às {e.hora}
                         </p>
+
                         <p className="flex items-center gap-1.5 text-xs text-stone-500">
                           <IconePino size={13} />
                           {e.cidade}
@@ -261,21 +309,24 @@ export default function DashboardView() {
               <ul className="space-y-1">
                 {cidades.map((c) => {
                   const ativa = cidade === c;
+
                   return (
                     <li key={c}>
                       <button
                         type="button"
                         aria-pressed={ativa}
                         onClick={() => setCidade(ativa ? null : c)}
-                        className={`flex w-full items-center justify-between rounded-lg px-2 py-2 text-sm transition-colors ${ativa
-                          ? "bg-mare-laranja/10 font-bold text-mare-laranja"
-                          : "text-stone-600 hover:bg-stone-50"
-                          }`}
+                        className={`flex w-full items-center justify-between rounded-lg px-2 py-2 text-sm transition-colors ${
+                          ativa
+                            ? "bg-mare-laranja/10 font-bold text-mare-laranja"
+                            : "text-stone-600 hover:bg-stone-50"
+                        }`}
                       >
                         <span className="flex items-center gap-2.5">
                           <IconePino size={14} className="text-stone-400" />
                           {c}
                         </span>
+
                         <span className="grid size-6 place-items-center rounded-full bg-stone-100 text-xs text-stone-600">
                           {contagem(c)}
                         </span>
@@ -300,12 +351,15 @@ export default function DashboardView() {
                   {meusFavoritos.map((e) => (
                     <li key={e.id} className="flex items-center gap-3">
                       <Miniatura evento={e} tamanho="size-11" />
+
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold">{e.titulo}</p>
+
                         <p className="text-xs text-stone-400">
                           {e.data} • {e.cidade}
                         </p>
                       </div>
+
                       <button
                         type="button"
                         aria-label={`Remover dos favoritos: ${e.titulo}`}
@@ -325,8 +379,10 @@ export default function DashboardView() {
                 {sugestoes.map((e) => (
                   <li key={e.id} className="flex items-center gap-3">
                     <Miniatura evento={e} tamanho="size-11" />
+
                     <div className="min-w-0">
                       <p className="truncate text-sm font-bold">{e.titulo}</p>
+
                       <p className="text-xs text-stone-400">
                         {e.categoria} • {e.cidade}
                       </p>

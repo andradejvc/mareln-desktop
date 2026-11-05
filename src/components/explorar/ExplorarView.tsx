@@ -18,8 +18,6 @@ import { BotaoFavorito } from "../dashboard/partes";
 import CabecalhoMobile from "./CabecalhoMobile";
 import FiltroCidades from "./FiltroCidades";
 
-const NOTIFICACOES = 3;
-
 function combina(
   e: (typeof eventos)[number],
   busca: string,
@@ -28,19 +26,23 @@ function combina(
 ) {
   if (cidade && e.cidade !== cidade) return false;
   if (categoria && e.categoria !== categoria) return false;
+
   const termo = busca.trim().toLowerCase();
+
   if (!termo) return true;
+
   return [e.titulo, e.local, e.cidade, e.categoria].some((campo) =>
     campo.toLowerCase().includes(termo),
   );
 }
 
-// Uma tela só: o mesmo JSX serve para celular e desktop.
-// O que muda de um para o outro usa as classes responsivas (lg:).
 export default function ExplorarView() {
   const router = useRouter();
+
   const { usuario, pronta } = useSessao();
+
   const sessao = !pronta ? "carregando" : usuario ? "logado" : "visitante";
+
   const [busca, setBusca] = useState("");
   const [cidade, setCidade] = useState<Cidade | null>(null);
   const [categoria, setCategoria] = useState<Categoria | null>(null);
@@ -78,13 +80,13 @@ export default function ExplorarView() {
   return (
     <div className="mx-auto w-full max-w-xl pb-10 lg:max-w-7xl lg:px-6 lg:py-5">
       {/* Topo: faixa laranja no celular, navbar no desktop */}
-      <CabecalhoMobile notificacoes={NOTIFICACOES} sessao={sessao} />
+      <CabecalhoMobile sessao={sessao} />
+
       <div className="hidden lg:block">
         <DashboardNavbar
           sessao={sessao}
           nomeUsuario={usuario?.nome}
           totalFavoritos={favoritosVisiveis.length}
-          notificacoes={NOTIFICACOES}
           paginaAtiva="Explorar"
           busca={busca}
           onBusca={setBusca}
@@ -112,17 +114,19 @@ export default function ExplorarView() {
               <path d="M20 12H5M11 6l-6 6 6 6" />
             </svg>
           </Link>
+
           <span className="font-titulo text-2xl uppercase tracking-wide text-mare-rosa lg:text-3xl">
             Explorar
           </span>
         </h1>
 
-        {/* Busca + filtro de categorias (só no celular; no desktop a busca fica na navbar) */}
+        {/* Busca + filtro de categorias */}
         <div className="lg:hidden">
           <div className="mt-4 flex items-center gap-2">
             <label className="flex flex-1 items-center gap-2 rounded-full bg-white px-4 py-2.5 text-stone-400 shadow-sm">
               <IconeBusca size={16} />
               <span className="sr-only">Buscar eventos</span>
+
               <input
                 type="search"
                 value={busca}
@@ -131,13 +135,15 @@ export default function ExplorarView() {
                 className="w-full bg-transparent text-sm text-stone-800 outline-none placeholder:text-stone-400"
               />
             </label>
+
             <button
               type="button"
               aria-label="Filtrar por categoria"
               aria-expanded={filtrosAbertos}
               onClick={() => setFiltrosAbertos((v) => !v)}
-              className={`grid size-10 shrink-0 place-items-center rounded-full text-mare-rosa ${filtrosAbertos || categoria ? "bg-mare-rosa/15" : ""
-                }`}
+              className={`grid size-10 shrink-0 place-items-center rounded-full text-mare-rosa ${
+                filtrosAbertos || categoria ? "bg-mare-rosa/15" : ""
+              }`}
             >
               <svg
                 width="22"
@@ -158,17 +164,22 @@ export default function ExplorarView() {
           </div>
 
           {filtrosAbertos && (
-            <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Categorias">
+            <div
+              className="mt-3 flex flex-wrap gap-2"
+              role="group"
+              aria-label="Categorias"
+            >
               {categorias.map((c) => (
                 <button
                   key={c}
                   type="button"
                   aria-pressed={categoria === c}
                   onClick={() => setCategoria(categoria === c ? null : c)}
-                  className={`rounded-full border px-4 py-1.5 text-sm ${categoria === c
-                    ? "border-mare-rosa bg-mare-rosa text-white"
-                    : "border-mare-rosa/40 bg-white text-mare-rosa"
-                    }`}
+                  className={`rounded-full border px-4 py-1.5 text-sm ${
+                    categoria === c
+                      ? "border-mare-rosa bg-mare-rosa text-white"
+                      : "border-mare-rosa/40 bg-white text-mare-rosa"
+                  }`}
                 >
                   {c}
                 </button>
@@ -179,24 +190,33 @@ export default function ExplorarView() {
 
         {/* Cidades */}
         <section aria-labelledby="titulo-cidades" className="mt-6">
-          <h2 id="titulo-cidades" className="mb-3 text-base font-bold lg:text-sm">
+          <h2
+            id="titulo-cidades"
+            className="mb-3 text-base font-bold lg:text-sm"
+          >
             Cidades
           </h2>
+
           <FiltroCidades selecionada={cidade} onSelecionar={setCidade} />
         </section>
 
-        {/* Eventos: lista no celular, grade de 3 colunas no desktop */}
+        {/* Eventos */}
         <section aria-labelledby="titulo-eventos" className="mt-8">
-          <h2 id="titulo-eventos" className="mb-3 text-base font-bold lg:sr-only">
+          <h2
+            id="titulo-eventos"
+            className="mb-3 text-base font-bold lg:sr-only"
+          >
             {cidade ? `Eventos em ${cidade}` : "Próximos eventos"}
           </h2>
 
           {filtrados.length === 0 ? (
             <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
               <p className="font-bold">Nenhum evento encontrado.</p>
+
               <p className="mt-1 text-sm text-stone-500">
                 Tente outra busca ou limpe os filtros.
               </p>
+
               <button
                 type="button"
                 onClick={limparFiltros}
@@ -226,17 +246,22 @@ export default function ExplorarView() {
                     <span className="text-[10px] font-bold uppercase tracking-wide text-mare-rosa lg:hidden">
                       {e.categoria}
                     </span>
-                    <h3 className="font-card text-base leading-tight">{e.titulo}</h3>
+
+                    <h3 className="font-card text-base leading-tight">
+                      {e.titulo}
+                    </h3>
+
                     <p className="mt-1 text-[11px] text-stone-500 lg:text-sm lg:text-stone-600">
                       {e.data} • {e.hora}
                     </p>
+
                     <p className="flex items-center gap-1.5 text-[11px] text-stone-500 lg:mt-1 lg:text-xs lg:text-stone-700">
                       <span className="hidden lg:inline">
                         <IconePino size={13} />
                       </span>
+
                       {e.local}, {e.cidade}
                     </p>
-
                   </div>
 
                   <BotaoFavorito
@@ -251,7 +276,7 @@ export default function ExplorarView() {
           )}
         </section>
 
-        {/* Botão do design (só no desktop): leva para a página do mapa */}
+        {/* Botão do design: leva para a página do mapa */}
         <div className="mt-10 hidden justify-center lg:flex">
           <Link
             href="/mapa"

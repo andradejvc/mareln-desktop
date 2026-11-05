@@ -7,14 +7,12 @@ import {
   IconeCoracao,
   IconeInicio,
   IconeSeta,
-  IconeSino,
   IconeUsuario,
 } from "./icons";
 import { BannerMapa, BotaoFavorito, Chip } from "./partes";
 
 type Props = {
   nomeUsuario: string;
-  notificacoes: number;
   cidade: Cidade | null;
   onCidade: (cidade: Cidade | null) => void;
   favoritos: number[];
@@ -121,7 +119,6 @@ function CardMobile({
 
 export default function DashboardMobile({
   nomeUsuario,
-  notificacoes,
   cidade,
   onCidade,
   favoritos,
@@ -135,36 +132,18 @@ export default function DashboardMobile({
     <div className="mx-auto w-full max-w-xl pb-28">
       {/* Cabeçalho laranja */}
       <header className="rounded-b-[2rem] bg-mare-laranja px-5 pb-6 pt-8 text-white">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-white/80">
-              Bem-vindo de volta
-            </p>
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-white/80">
+            Bem-vindo de volta
+          </p>
 
-            <h1 className="mt-1 text-3xl font-bold">
-              Oi, {nomeUsuario}! <span aria-hidden="true">👋</span>
-            </h1>
+          <h1 className="mt-1 text-3xl font-bold">
+            Oi, {nomeUsuario}! <span aria-hidden="true">👋</span>
+          </h1>
 
-            <p className="mt-1 text-sm text-white/90">
-              O que vamos descobrir hoje?
-            </p>
-          </div>
-
-          <button
-            type="button"
-            aria-label={`Notificações${
-              notificacoes ? ` (${notificacoes} novas)` : ""
-            }`}
-            className="relative grid size-11 shrink-0 place-items-center rounded-full bg-white/20"
-          >
-            <IconeSino size={20} />
-
-            {notificacoes > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 grid size-5 place-items-center rounded-full bg-mare-rosa text-[10px] font-bold">
-                {notificacoes}
-              </span>
-            )}
-          </button>
+          <p className="mt-1 text-sm text-white/90">
+            O que vamos descobrir hoje?
+          </p>
         </div>
 
         <label className="mt-5 flex items-center gap-2.5 rounded-full bg-white px-4 py-3 text-stone-400 shadow-sm">

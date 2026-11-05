@@ -7,12 +7,10 @@ import {
   IconeCoracao,
   IconeInicio,
   IconeSeta,
-  IconeSino,
   IconeUsuario,
 } from "../dashboard/icons";
 
 type Props = {
-  notificacoes: number;
   sessao?: "carregando" | "visitante" | "logado";
 };
 
@@ -42,10 +40,10 @@ const menuVisitante: ItemMenu[] = [
 ];
 
 export default function CabecalhoMobile({
-  notificacoes,
   sessao = "logado",
 }: Props) {
   const [aberto, setAberto] = useState(false);
+
   const logado = sessao === "logado";
   const menu = logado ? menuLogado : menuVisitante;
 
@@ -57,21 +55,12 @@ export default function CabecalhoMobile({
     >
       <div className="flex items-center justify-between">
         {logado ? (
-          <button
-            type="button"
-            aria-label={`Notificações${
-              notificacoes ? ` (${notificacoes} novas)` : ""
-            }`}
-            className="relative grid size-11 place-items-center rounded-full bg-white/20"
+          <Link
+            href="/dashboard"
+            className="font-titulo text-lg font-bold text-white"
           >
-            <IconeSino size={20} />
-
-            {notificacoes > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 grid size-5 place-items-center rounded-full bg-mare-rosa text-[10px] font-bold">
-                {notificacoes}
-              </span>
-            )}
-          </button>
+            Maré LN
+          </Link>
         ) : (
           <Link
             href="/login"

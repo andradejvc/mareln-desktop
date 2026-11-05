@@ -4,7 +4,6 @@ import {
   IconeCoracao,
   IconeInicio,
   IconeSeta,
-  IconeSino,
   IconeUsuario,
 } from "./icons";
 
@@ -12,7 +11,6 @@ type Props = {
   sessao?: "carregando" | "visitante" | "logado";
   nomeUsuario?: string;
   totalFavoritos?: number;
-  notificacoes?: number;
   paginaAtiva?: string;
   busca?: string;
   onBusca?: (valor: string) => void;
@@ -48,7 +46,6 @@ export default function DashboardNavbar({
   sessao = "logado",
   nomeUsuario = "",
   totalFavoritos = 0,
-  notificacoes = 0,
   paginaAtiva = "Início",
   busca,
   onBusca,
@@ -109,6 +106,7 @@ export default function DashboardNavbar({
         <label className="hidden items-center gap-2 rounded-full bg-stone-100 px-3 py-2 md:flex">
           <IconeBusca size={14} className="text-stone-400" />
           <span className="sr-only">Buscar eventos</span>
+
           <input
             type="search"
             value={busca}
@@ -119,27 +117,9 @@ export default function DashboardNavbar({
         </label>
 
         {logado ? (
-          <>
-            <button
-              type="button"
-              aria-label={`Notificações${
-                notificacoes ? ` (${notificacoes} novas)` : ""
-              }`}
-              className="relative grid size-9 place-items-center rounded-full text-stone-500 hover:bg-stone-100"
-            >
-              <IconeSino size={18} />
-
-              {notificacoes > 0 && (
-                <span className="absolute right-0.5 top-0.5 grid size-4 place-items-center rounded-full bg-mare-rosa text-[9px] font-bold text-white">
-                  {notificacoes}
-                </span>
-              )}
-            </button>
-
-            <div className="hidden items-center rounded-full bg-stone-100 px-4 py-2 text-xs sm:flex">
-              {nomeUsuario}
-            </div>
-          </>
+          <div className="hidden items-center rounded-full bg-stone-100 px-4 py-2 text-xs sm:flex">
+            {nomeUsuario}
+          </div>
         ) : (
           <>
             <Link
