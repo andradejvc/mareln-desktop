@@ -4,13 +4,16 @@ import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useSessao } from "@/lib/usuario";
 
+type DestinoProtegido =
+  | "/dashboard"
+  | "/explorar"
+  | "/perfil"
+  | "/favoritos"
+  | `/eventos/${number}`;
+
 type Props = {
   children: ReactNode;
-  destinoAposLogin?:
-    | "/dashboard"
-    | "/explorar"
-    | "/perfil"
-    | "/favoritos";
+  destinoAposLogin?: DestinoProtegido;
 };
 
 export default function RotaProtegida({

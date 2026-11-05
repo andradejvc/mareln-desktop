@@ -31,3 +31,33 @@ button {
 html {
   scroll-behavior: smooth;
 }
+
+/* Destaque sutil dos cartões de eventos em dispositivos com mouse. */
+.cartao-evento {
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    outline-color 220ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cartao-evento:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 14px 30px rgba(120, 53, 15, 0.14),
+      0 0 0 1px rgba(232, 89, 12, 0.24);
+  }
+}
+
+/* Mantém o destaque acessível também na navegação por teclado. */
+.cartao-evento:focus-within {
+  box-shadow:
+    0 0 0 2px rgba(232, 89, 12, 0.30),
+    0 12px 24px rgba(120, 53, 15, 0.10);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cartao-evento {
+    transition: none;
+  }
+}

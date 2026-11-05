@@ -29,6 +29,22 @@ export function Chip({
   );
 }
 
+export function LinkDetalhesEvento({
+  evento,
+}: {
+  evento: { id: number; titulo: string };
+}) {
+  return (
+    <Link
+      href={`/eventos/${evento.id}`}
+      aria-label={`Ver detalhes de ${evento.titulo}`}
+      className="absolute inset-0 z-10 rounded-[inherit] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mare-laranja"
+    >
+      <span className="sr-only">Ver detalhes de {evento.titulo}</span>
+    </Link>
+  );
+}
+
 export function BotaoFavorito({
   evento,
   ativo,
@@ -48,7 +64,7 @@ export function BotaoFavorito({
       aria-pressed={ativo}
       aria-label={`${ativo ? "Remover dos" : "Adicionar aos"} favoritos: ${evento.titulo}`}
       onClick={() => onAlternar(evento.id)}
-      className={`grid size-8 place-items-center rounded-full backdrop-blur transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-mare-rosa ${
+      className={`z-20 grid size-8 place-items-center rounded-full backdrop-blur transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-mare-rosa ${
         escuro
           ? `bg-black/40 ${ativo ? "text-mare-rosa" : "text-white"}`
           : `bg-white/90 ${ativo ? "text-mare-rosa" : "text-stone-500"}`

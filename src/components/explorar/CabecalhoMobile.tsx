@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-
 import {
   IconeBusca,
   IconeCoracao,
@@ -11,16 +10,17 @@ import {
   IconeUsuario,
 } from "../dashboard/icons";
 
+type PaginaAtiva = "Explorar" | "Favoritos" | "Detalhes";
+
 type Props = {
   sessao?: "carregando" | "visitante" | "logado";
-  paginaAtiva?: "Explorar" | "Favoritos";
+  paginaAtiva?: PaginaAtiva;
 };
 
 type ItemMenu = {
   href: string;
   label: string;
   Icone: typeof IconeInicio;
-  ativo?: boolean;
 };
 
 const menuLogado: ItemMenu[] = [
@@ -42,13 +42,12 @@ export default function CabecalhoMobile({
   paginaAtiva = "Explorar",
 }: Props) {
   const [aberto, setAberto] = useState(false);
-
   const logado = sessao === "logado";
   const menuBase = logado ? menuLogado : menuVisitante;
 
   const menu = menuBase.map((item) => ({
     ...item,
-    ativo: item.label === (logado ? paginaAtiva : "Explorar"),
+    ativo: item.label === paginaAtiva,
   }));
 
   return (

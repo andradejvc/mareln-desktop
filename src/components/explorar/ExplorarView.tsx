@@ -14,7 +14,7 @@ import { useSessao } from "@/lib/usuario";
 import { useFavoritos } from "@/lib/favoritos";
 import DashboardNavbar from "../dashboard/DashboardNavbar";
 import { IconeBusca, IconePino } from "../dashboard/icons";
-import { BotaoFavorito } from "../dashboard/partes";
+import { BotaoFavorito, LinkDetalhesEvento } from "../dashboard/partes";
 import CabecalhoMobile from "./CabecalhoMobile";
 import FiltroCidades from "./FiltroCidades";
 
@@ -38,9 +38,7 @@ function combina(
 
 export default function ExplorarView() {
   const router = useRouter();
-
   const { usuario, pronta } = useSessao();
-
   const sessao = !pronta ? "carregando" : usuario ? "logado" : "visitante";
 
   const [busca, setBusca] = useState("");
@@ -67,7 +65,6 @@ export default function ExplorarView() {
     }
 
     if (sessao !== "logado") return;
-
     alternarFavoritoSalvo(id);
   }
 
@@ -83,7 +80,6 @@ export default function ExplorarView() {
 
   return (
     <div className="mx-auto w-full max-w-xl pb-10 lg:max-w-7xl lg:px-6 lg:py-5">
-      {/* Topo: faixa laranja no celular, navbar no desktop */}
       <CabecalhoMobile sessao={sessao} />
 
       <div className="hidden lg:block">
@@ -124,14 +120,11 @@ export default function ExplorarView() {
           </span>
         </h1>
 
-        {/* Busca e filtro de categorias no celular */}
         <div className="lg:hidden">
           <div className="mt-4 flex items-center gap-2">
             <label className="flex flex-1 items-center gap-2 rounded-full bg-white px-4 py-2.5 text-stone-400 shadow-sm">
               <IconeBusca size={16} />
-
               <span className="sr-only">Buscar eventos</span>
-
               <input
                 type="search"
                 value={busca}
@@ -170,7 +163,6 @@ export default function ExplorarView() {
           </div>
         </div>
 
-        {/* Filtro de categorias no desktop */}
         <div className="mt-6 hidden items-center justify-between lg:flex">
           <h2 className="text-base font-bold">Filtrar por categoria</h2>
 
@@ -200,12 +192,10 @@ export default function ExplorarView() {
               <circle cx="10" cy="12" r="2" />
               <circle cx="18" cy="18" r="2" />
             </svg>
-
             {categoria ?? "Selecionar categoria"}
           </button>
         </div>
 
-        {/* Categorias compartilhadas entre celular e desktop */}
         {filtrosAbertos && (
           <div
             id="filtros-categorias"
@@ -231,7 +221,6 @@ export default function ExplorarView() {
           </div>
         )}
 
-        {/* Cidades */}
         <section aria-labelledby="titulo-cidades" className="mt-6">
           <h2
             id="titulo-cidades"
@@ -239,11 +228,9 @@ export default function ExplorarView() {
           >
             Cidades
           </h2>
-
           <FiltroCidades selecionada={cidade} onSelecionar={setCidade} />
         </section>
 
-        {/* Eventos */}
         <section aria-labelledby="titulo-eventos" className="mt-8">
           <h2
             id="titulo-eventos"
@@ -255,11 +242,9 @@ export default function ExplorarView() {
           {filtrados.length === 0 ? (
             <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
               <p className="font-bold">Nenhum evento encontrado.</p>
-
               <p className="mt-1 text-sm text-stone-500">
                 Tente outra busca ou limpe os filtros.
               </p>
-
               <button
                 type="button"
                 onClick={limparFiltros}
@@ -273,7 +258,7 @@ export default function ExplorarView() {
               {filtrados.map((e) => (
                 <li
                   key={e.id}
-                  className="relative flex gap-3 rounded-2xl bg-white p-3 shadow-md shadow-orange-900/10 lg:flex-col lg:gap-0 lg:overflow-hidden lg:p-0 lg:transition-shadow lg:hover:shadow-lg lg:hover:shadow-orange-900/10"
+                  className="cartao-evento relative flex gap-3 rounded-2xl bg-white p-3 shadow-md shadow-orange-900/10 lg:flex-col lg:gap-0 lg:overflow-hidden lg:p-0 lg:transition-shadow lg:hover:shadow-lg lg:hover:shadow-orange-900/10"
                 >
                   <div className="relative h-24 w-28 shrink-0 overflow-hidden rounded-xl lg:h-44 lg:w-full lg:rounded-none">
                     <Image
@@ -289,20 +274,16 @@ export default function ExplorarView() {
                     <span className="text-[10px] font-bold uppercase tracking-wide text-mare-rosa lg:hidden">
                       {e.categoria}
                     </span>
-
                     <h3 className="font-card text-base leading-tight">
                       {e.titulo}
                     </h3>
-
                     <p className="mt-1 text-[11px] text-stone-500 lg:text-sm lg:text-stone-600">
                       {e.data} • {e.hora}
                     </p>
-
                     <p className="flex items-center gap-1.5 text-[11px] text-stone-500 lg:mt-1 lg:text-xs lg:text-stone-700">
                       <span className="hidden lg:inline">
                         <IconePino size={13} />
                       </span>
-
                       {e.local}, {e.cidade}
                     </p>
                   </div>
@@ -313,13 +294,13 @@ export default function ExplorarView() {
                     onAlternar={alternarFavorito}
                     className="absolute right-3 top-3 shadow"
                   />
+                  <LinkDetalhesEvento evento={e} />
                 </li>
               ))}
             </ul>
           )}
         </section>
 
-        {/* Botão do design: leva para a página do mapa */}
         <div className="mt-10 hidden justify-center lg:flex">
           <Link
             href="/mapa"

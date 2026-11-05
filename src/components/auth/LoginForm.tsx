@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type FormEvent } from "react";
@@ -37,7 +36,6 @@ export default function LoginForm() {
     }
 
     setErros(novosErros);
-
     if (Object.keys(novosErros).length > 0) return;
 
     if (email.trim().toLowerCase() !== EMAIL_TESTE || senha !== SENHA_TESTE) {
@@ -56,12 +54,13 @@ export default function LoginForm() {
     salvarUsuario({ nome, email: emailLimpo });
 
     const returnTo = new URLSearchParams(window.location.search).get("returnTo");
-
     const destinosPermitidos = ["/explorar", "/perfil", "/favoritos"];
+    const destinoEventoPermitido = /^\/eventos\/\d+$/.test(returnTo ?? "");
 
-    const destino = destinosPermitidos.includes(returnTo ?? "")
-      ? returnTo!
-      : "/dashboard";
+    const destino =
+      destinosPermitidos.includes(returnTo ?? "") || destinoEventoPermitido
+        ? returnTo!
+        : "/dashboard";
 
     router.push(destino);
   }

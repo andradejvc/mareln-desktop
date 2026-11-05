@@ -1,4 +1,3 @@
-
 import Image from "next/image";
 import Link from "next/link";
 import { cidades, type Cidade } from "@/data/eventos";
@@ -10,7 +9,12 @@ import {
   IconeSeta,
   IconeUsuario,
 } from "./icons";
-import { BannerMapa, BotaoFavorito, Chip } from "./partes";
+import {
+  BannerMapa,
+  BotaoFavorito,
+  Chip,
+  LinkDetalhesEvento,
+} from "./partes";
 
 type Props = {
   nomeUsuario: string;
@@ -45,7 +49,6 @@ function TituloSecao({
   return (
     <div className="mb-3 flex items-center justify-between px-5">
       <h2 className="font-titulo text-2xl">{titulo}</h2>
-
       {acao && (
         <Link href={acao.href} className="text-sm font-bold text-mare-rosa">
           {acao.label}
@@ -68,7 +71,7 @@ function CardMobile({
 }) {
   return (
     <article
-      className={`overflow-hidden rounded-2xl bg-white shadow-sm shadow-orange-900/10 ${
+      className={`cartao-evento relative overflow-hidden rounded-2xl bg-white shadow-sm shadow-orange-900/10 ${
         compacto ? "w-56 shrink-0 snap-start" : "w-full"
       }`}
     >
@@ -103,17 +106,16 @@ function CardMobile({
         >
           {evento.titulo}
         </h3>
-
         <Chip categoria={evento.categoria} mobile />
-
         <p className="text-xs text-stone-500">
           {evento.data} • {evento.hora}
         </p>
-
         <p className={`text-xs text-stone-500 ${compacto ? "truncate" : ""}`}>
           {evento.local}, {evento.cidade}
         </p>
       </div>
+
+      <LinkDetalhesEvento evento={evento} />
     </article>
   );
 }
@@ -131,17 +133,14 @@ export default function DashboardMobile({
 }: Props) {
   return (
     <div className="mx-auto w-full max-w-xl pb-28">
-      {/* Cabeçalho laranja */}
       <header className="rounded-b-[2rem] bg-mare-laranja px-5 pb-6 pt-8 text-white">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-white/80">
             Bem-vindo de volta
           </p>
-
           <h1 className="mt-1 text-3xl font-bold">
             Oi, {nomeUsuario}! <span aria-hidden="true">👋</span>
           </h1>
-
           <p className="mt-1 text-sm text-white/90">
             O que vamos descobrir hoje?
           </p>
@@ -150,7 +149,6 @@ export default function DashboardMobile({
         <label className="mt-5 flex items-center gap-2.5 rounded-full bg-white px-4 py-3 text-stone-400 shadow-sm">
           <IconeBusca size={18} />
           <span className="sr-only">Buscar eventos</span>
-
           <input
             type="search"
             placeholder="Buscar eventos..."
@@ -159,7 +157,6 @@ export default function DashboardMobile({
         </label>
       </header>
 
-      {/* Cidades */}
       <div
         role="group"
         aria-label="Filtrar por cidade"
@@ -167,7 +164,6 @@ export default function DashboardMobile({
       >
         {cidades.map((c) => {
           const ativa = cidade === c;
-
           return (
             <button
               key={c}
@@ -187,14 +183,12 @@ export default function DashboardMobile({
       </div>
 
       <div className="space-y-8">
-        {/* Acontecendo hoje */}
         {hoje.length > 0 && (
           <section aria-label="Acontecendo hoje">
             <TituloSecao
               titulo="Acontecendo hoje"
-              acao={{ href: "/favoritos", label: "Ver todos →" }}
+              acao={{ href: "/explorar", label: "Ver tudo →" }}
             />
-
             <div className={faixa}>
               {hoje.map((e) => (
                 <CardMobile
@@ -209,10 +203,8 @@ export default function DashboardMobile({
           </section>
         )}
 
-        {/* Pode te interessar */}
         <section aria-label="Pode te interessar">
           <TituloSecao titulo="Pode te interessar" />
-
           <div className="space-y-3 px-5">
             {sugestoes.slice(0, 2).map((e) => (
               <CardMobile
@@ -225,7 +217,6 @@ export default function DashboardMobile({
           </div>
         </section>
 
-        {/* Meus favoritos */}
         <section
           id="favoritos-mobile"
           aria-label="Meus favoritos"
@@ -255,10 +246,8 @@ export default function DashboardMobile({
           )}
         </section>
 
-        {/* Próximos eventos */}
         <section aria-label="Próximos eventos">
           <TituloSecao titulo="Próximos eventos" />
-
           <div className="space-y-3 px-5">
             {proximos.length === 0 ? (
               <p className="rounded-2xl bg-white p-6 text-center text-sm text-stone-500">
@@ -277,7 +266,6 @@ export default function DashboardMobile({
           </div>
         </section>
 
-        {/* Botões finais */}
         <div className="space-y-4 px-5">
           <Link
             href="/explorar"
@@ -285,12 +273,10 @@ export default function DashboardMobile({
           >
             Ver todos os eventos →
           </Link>
-
           <BannerMapa linha className="h-24" />
         </div>
       </div>
 
-      {/* Barra de abas fixa embaixo */}
       <nav
         aria-label="Principal"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
