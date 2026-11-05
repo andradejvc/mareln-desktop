@@ -57,8 +57,25 @@ function assinar(aviso: () => void) {
   };
 }
 
-// Hook para os componentes: devolve o usuário salvo (ou null se não houver).
+// Hook para os componentes.
+// pronta = false só no primeiro instante, enquanto o navegador ainda não leu
+// o localStorage (assim a tela não pisca como "visitante" para quem está logado).
+export function useSessao(): { usuario: Usuario | null; pronta: boolean } {
+  const bruto = useSyncExternalStore<string | null | undefined>(
+    assinar,
+    lerBruto,
+    () => undefined,
+  );
+  return useMemo(
+    () => ({
+      usuario: bruto ? converter(bruto) : null,
+      pronta: bruto !== undefined,
+    }),
+    [bruto],
+  );
+}
+
+// Atalho para quem só precisa do usuário (ou null se não houver ninguém logado).
 export function useUsuario(): Usuario | null {
-  const bruto = useSyncExternalStore(assinar, lerBruto, () => null);
-  return useMemo(() => (bruto ? converter(bruto) : null), [bruto]);
+  return useSessao().usuario;
 }

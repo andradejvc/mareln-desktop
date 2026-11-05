@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import DashboardView from "@/components/dashboard/DashboardView";
+import RotaProtegida from "@/components/RotaProtegida";
 
 export const metadata: Metadata = {
   title: "Início | Maré LN",
@@ -8,7 +9,9 @@ export const metadata: Metadata = {
 export default function DashboardPage() {
   return (
     <main>
-      <DashboardView />
+      <RotaProtegida>
+        <DashboardView />
+      </RotaProtegida>
     </main>
   );
 }

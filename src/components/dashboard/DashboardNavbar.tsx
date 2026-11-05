@@ -9,8 +9,10 @@ import {
 } from "./icons";
 
 type Props = {
-  nomeUsuario: string;
-  totalFavoritos: number;
+  /** "carregando" = ainda lendo o navegador, "visitante" = ninguém logado. */
+  sessao?: "carregando" | "visitante" | "logado";
+  nomeUsuario?: string;
+  totalFavoritos?: number;
   notificacoes?: number;
   /** Rótulo da aba atual (ex.: "Início", "Explorar"). */
   paginaAtiva?: string;
@@ -19,7 +21,14 @@ type Props = {
   onBusca?: (valor: string) => void;
 };
 
-const links = [
+type ItemMenu = {
+  href: string;
+  label: string;
+  Icone: typeof IconeInicio;
+  favoritos?: boolean;
+};
+
+const linksLogado: ItemMenu[] = [
   { href: "/dashboard", label: "Início", Icone: IconeInicio },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
   { href: "/explorar", label: "Mapa", Icone: IconeSeta },
@@ -27,17 +36,32 @@ const links = [
   { href: "/login", label: "Perfil", Icone: IconeUsuario },
 ];
 
+// Quem não está logado não vê Favoritos nem Perfil, e o "Início" é a landing.
+const linksVisitante: ItemMenu[] = [
+  { href: "/", label: "Início", Icone: IconeInicio },
+  { href: "/explorar", label: "Explorar", Icone: IconeBusca },
+  { href: "/explorar", label: "Mapa", Icone: IconeSeta },
+];
+
 export default function DashboardNavbar({
-  nomeUsuario,
-  totalFavoritos,
+  sessao = "logado",
+  nomeUsuario = "",
+  totalFavoritos = 0,
   notificacoes = 0,
   paginaAtiva = "Início",
   busca,
   onBusca,
 }: Props) {
+  const logado = sessao === "logado";
+  const links = logado ? linksLogado : linksVisitante;
+
   return (
-    <header className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2.5 shadow-md shadow-orange-900/5 sm:px-4">
-      <Link href="/dashboard" className="flex shrink-0 items-center gap-2.5">
+    <header
+      className={`flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2.5 shadow-md shadow-orange-900/5 sm:px-4 ${
+        sessao === "carregando" ? "invisible" : ""
+      }`}
+    >
+      <Link href={logado ? "/dashboard" : "/"} className="flex shrink-0 items-center gap-2.5">
         <span className="font-titulo grid size-9 place-items-center rounded-xl bg-mare-laranja text-lg font-extrabold text-white">
           M
         </span>
@@ -88,22 +112,41 @@ export default function DashboardNavbar({
           />
         </label>
 
-        <button
-          type="button"
-          aria-label={`Notificações${notificacoes ? ` (${notificacoes} novas)` : ""}`}
-          className="relative grid size-9 place-items-center rounded-full text-stone-500 hover:bg-stone-100"
-        >
-          <IconeSino size={18} />
-          {notificacoes > 0 && (
-            <span className="absolute right-0.5 top-0.5 grid size-4 place-items-center rounded-full bg-mare-rosa text-[9px] font-bold text-white">
-              {notificacoes}
-            </span>
-          )}
-        </button>
+        {logado ? (
+          <>
+            <button
+              type="button"
+              aria-label={`Notificações${notificacoes ? ` (${notificacoes} novas)` : ""}`}
+              className="relative grid size-9 place-items-center rounded-full text-stone-500 hover:bg-stone-100"
+            >
+              <IconeSino size={18} />
+              {notificacoes > 0 && (
+                <span className="absolute right-0.5 top-0.5 grid size-4 place-items-center rounded-full bg-mare-rosa text-[9px] font-bold text-white">
+                  {notificacoes}
+                </span>
+              )}
+            </button>
 
-        <div className="hidden items-center rounded-full bg-stone-100 px-4 py-2 text-xs sm:flex">
-          {nomeUsuario}
-        </div>
+            <div className="hidden items-center rounded-full bg-stone-100 px-4 py-2 text-xs sm:flex">
+              {nomeUsuario}
+            </div>
+          </>
+        ) : (
+          <>
+            <Link
+              href="/login"
+              className="rounded-full border-2 border-mare-laranja px-4 py-1.5 text-sm font-bold text-mare-laranja transition-colors hover:bg-mare-laranja hover:text-white"
+            >
+              Entrar
+            </Link>
+            <Link
+              href="/registro"
+              className="hidden rounded-full bg-mare-laranja px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 sm:block"
+            >
+              Criar conta
+            </Link>
+          </>
+        )}
       </div>
     </header>
   );

@@ -11,7 +11,20 @@ import {
   IconeUsuario,
 } from "../dashboard/icons";
 
-const menu = [
+type Props = {
+  notificacoes: number;
+  /** "carregando" = ainda lendo o navegador, "visitante" = ninguém logado. */
+  sessao?: "carregando" | "visitante" | "logado";
+};
+
+type ItemMenu = {
+  href: string;
+  label: string;
+  Icone: typeof IconeInicio;
+  ativo?: boolean;
+};
+
+const menuLogado: ItemMenu[] = [
   { href: "/dashboard", label: "Início", Icone: IconeInicio },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca, ativo: true },
   { href: "/explorar", label: "Mapa", Icone: IconeSeta },
@@ -19,25 +32,47 @@ const menu = [
   { href: "/login", label: "Perfil", Icone: IconeUsuario },
 ];
 
-// Faixa laranja do celular (sino + menu). No desktop quem aparece é a DashboardNavbar.
-export default function CabecalhoMobile({ notificacoes }: { notificacoes: number }) {
+// Quem não está logado não vê Favoritos nem Perfil, e o "Início" é a landing.
+const menuVisitante: ItemMenu[] = [
+  { href: "/", label: "Início", Icone: IconeInicio },
+  { href: "/explorar", label: "Explorar", Icone: IconeBusca, ativo: true },
+  { href: "/explorar", label: "Mapa", Icone: IconeSeta },
+];
+
+// Faixa laranja do celular. No desktop quem aparece é a DashboardNavbar.
+export default function CabecalhoMobile({ notificacoes, sessao = "logado" }: Props) {
   const [aberto, setAberto] = useState(false);
+  const logado = sessao === "logado";
+  const menu = logado ? menuLogado : menuVisitante;
 
   return (
-    <header className="relative bg-mare-laranja px-5 py-4 text-white shadow-md lg:hidden">
+    <header
+      className={`relative bg-mare-laranja px-5 py-4 text-white shadow-md lg:hidden ${
+        sessao === "carregando" ? "invisible" : ""
+      }`}
+    >
       <div className="flex items-center justify-between">
-        <button
-          type="button"
-          aria-label={`Notificações${notificacoes ? ` (${notificacoes} novas)` : ""}`}
-          className="relative grid size-11 place-items-center rounded-full bg-white/20"
-        >
-          <IconeSino size={20} />
-          {notificacoes > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 grid size-5 place-items-center rounded-full bg-mare-rosa text-[10px] font-bold">
-              {notificacoes}
-            </span>
-          )}
-        </button>
+        {logado ? (
+          <button
+            type="button"
+            aria-label={`Notificações${notificacoes ? ` (${notificacoes} novas)` : ""}`}
+            className="relative grid size-11 place-items-center rounded-full bg-white/20"
+          >
+            <IconeSino size={20} />
+            {notificacoes > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 grid size-5 place-items-center rounded-full bg-mare-rosa text-[10px] font-bold">
+                {notificacoes}
+              </span>
+            )}
+          </button>
+        ) : (
+          <Link
+            href="/login"
+            className="rounded-full bg-white px-5 py-2 text-sm font-bold text-mare-laranja"
+          >
+            Entrar
+          </Link>
+        )}
 
         <button
           type="button"
@@ -84,6 +119,25 @@ export default function CabecalhoMobile({ notificacoes }: { notificacoes: number
                 </Link>
               </li>
             ))}
+
+            {!logado && (
+              <li className="mt-1 space-y-2 border-t border-stone-100 p-2 pt-3">
+                <Link
+                  href="/login"
+                  onClick={() => setAberto(false)}
+                  className="block rounded-full border-2 border-mare-laranja py-2 text-center text-sm font-bold text-mare-laranja"
+                >
+                  Entrar
+                </Link>
+                <Link
+                  href="/registro"
+                  onClick={() => setAberto(false)}
+                  className="block rounded-full bg-mare-laranja py-2 text-center text-sm font-bold text-white"
+                >
+                  Criar conta
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
       )}
