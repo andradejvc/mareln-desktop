@@ -105,7 +105,7 @@ export default function LoginForm() {
           </label>
 
           <Link
-            href="#"
+            href="/recuperar-senha"
             className="font-semibold text-mare-laranja underline underline-offset-2"
           >
             Esqueceu a senha?
