@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, type ReactNode } from "react";
@@ -6,7 +7,7 @@ import { useSessao } from "@/lib/usuario";
 
 type Props = {
   children: ReactNode;
-  destinoAposLogin?: "/dashboard" | "/explorar";
+  destinoAposLogin?: "/dashboard" | "/explorar" | "/perfil";
 };
 
 export default function RotaProtegida({
@@ -19,7 +20,7 @@ export default function RotaProtegida({
   useEffect(() => {
     if (pronta && !usuario) {
       router.replace(
-        `/login?returnTo=${encodeURIComponent(destinoAposLogin)}`
+        `/login?returnTo=${encodeURIComponent(destinoAposLogin)}`,
       );
     }
   }, [pronta, usuario, router, destinoAposLogin]);

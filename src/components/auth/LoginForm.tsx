@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, type FormEvent } from "react";
@@ -8,7 +9,6 @@ import AuthInput from "./AuthInput";
 import GoogleButton from "./GoogleButton";
 import Divisor from "./Divisor";
 
-// Conta de teste (temporária) — trocar pela API de login quando existir
 const EMAIL_TESTE = "teste@mare.com";
 const SENHA_TESTE = "123456";
 
@@ -40,14 +40,11 @@ export default function LoginForm() {
 
     if (Object.keys(novosErros).length > 0) return;
 
-    // Validação temporária das credenciais.
     if (email.trim().toLowerCase() !== EMAIL_TESTE || senha !== SENHA_TESTE) {
       setErros({ senha: "Email ou senha incorretos." });
       return;
     }
 
-    // Salva os dados do usuário antes de redirecionar.
-    // A senha nunca é armazenada no localStorage.
     const emailLimpo = email.trim().toLowerCase();
     const salvo = lerUsuario();
 
@@ -58,12 +55,13 @@ export default function LoginForm() {
 
     salvarUsuario({ nome, email: emailLimpo });
 
-    // Retorna para a página que o visitante tentou acessar.
     const returnTo = new URLSearchParams(window.location.search).get("returnTo");
 
-    // Aceita somente destinos internos autorizados.
-    const destino =
-      returnTo === "/explorar" ? "/explorar" : "/dashboard";
+    const destinosPermitidos = ["/explorar", "/perfil"];
+
+    const destino = destinosPermitidos.includes(returnTo ?? "")
+      ? returnTo!
+      : "/dashboard";
 
     router.push(destino);
   }

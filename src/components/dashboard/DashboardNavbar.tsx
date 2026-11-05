@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import {
   IconeBusca,
@@ -33,7 +34,7 @@ const linksLogado: ItemMenu[] = [
     Icone: IconeCoracao,
     favoritos: true,
   },
-  { href: "/dashboard", label: "Perfil", Icone: IconeUsuario },
+  { href: "/perfil", label: "Perfil", Icone: IconeUsuario },
 ];
 
 const linksVisitante: ItemMenu[] = [

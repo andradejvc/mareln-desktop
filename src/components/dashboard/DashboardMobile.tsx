@@ -1,3 +1,4 @@
+
 import Image from "next/image";
 import Link from "next/link";
 import { cidades, type Cidade } from "@/data/eventos";
@@ -28,7 +29,7 @@ const abas = [
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
   { href: "/explorar", label: "Mapa", Icone: IconeSeta },
   { href: "#favoritos-mobile", label: "Favoritos", Icone: IconeCoracao },
-  { href: "/dashboard", label: "Perfil", Icone: IconeUsuario },
+  { href: "/perfil", label: "Perfil", Icone: IconeUsuario },
 ];
 
 const faixa =

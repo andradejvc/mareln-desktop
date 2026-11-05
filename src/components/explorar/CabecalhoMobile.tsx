@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -30,7 +31,7 @@ const menuLogado: ItemMenu[] = [
     label: "Favoritos",
     Icone: IconeCoracao,
   },
-  { href: "/dashboard", label: "Perfil", Icone: IconeUsuario },
+  { href: "/perfil", label: "Perfil", Icone: IconeUsuario },
 ];
 
 const menuVisitante: ItemMenu[] = [
