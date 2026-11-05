@@ -40,13 +40,13 @@ export default function LoginForm() {
     }
 
     // Guarda só nome e e-mail (nunca a senha) para o dashboard usar.
-    const emailLimpo = email.trim().toLowerCase();
-    const salvo = lerUsuario();
-    const nome =
-      salvo && salvo.email === emailLimpo ? salvo.nome : nomeDoEmail(emailLimpo);
-    salvarUsuario({ nome, email: emailLimpo });
+    const returnTo = new URLSearchParams(window.location.search).get("returnTo");
 
-    router.push("/dashboard");
+    const destino = returnTo === "/explorar"
+      ? "/explorar"
+      : "/dashboard";
+
+    router.push(destino);
   }
 
   return (

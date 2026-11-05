@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { lerUsuario } from "@/lib/usuario";
 
 const links = [
   { texto: "Início", href: "/" },
@@ -27,12 +28,12 @@ export default function Navbar() {
 
     event.preventDefault();
 
-    const isLogged = localStorage.getItem("isLogged") === "true";
+    const isLogged = lerUsuario() !== null;
 
     if (isLogged) {
       router.push(href);
     } else {
-      router.push("/login");
+      router.push("/login?returnTo=/explorar");
     }
 
     setAberto(false);
