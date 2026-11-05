@@ -4,15 +4,13 @@ import { IconeCoracao, IconeSeta } from "./icons";
 
 const corDaCategoria: Record<CategoriaDashboard, string> = {
   Música: "bg-rose-100 text-rose-700",
-  Feiras: "bg-amber-100 text-amber-700",
+  Feira: "bg-amber-100 text-amber-700",
   Natureza: "bg-green-100 text-green-700",
-  Esportes: "bg-blue-100 text-blue-700",
+  Esporte: "bg-blue-100 text-blue-700",
   Cultura: "bg-purple-100 text-purple-700",
   Gastronomia: "bg-emerald-100 text-emerald-700",
 };
 
-// Etiqueta colorida da categoria.
-// Desktop: pílula arredondada. Mobile (mobile = true): MAIÚSCULAS, cantos menores.
 export function Chip({
   categoria,
   mobile = false,
@@ -31,7 +29,6 @@ export function Chip({
   );
 }
 
-// Botão de coração (favoritar). "escuro" = versão sobre foto escura.
 export function BotaoFavorito({
   evento,
   ativo,
@@ -62,7 +59,6 @@ export function BotaoFavorito({
   );
 }
 
-// Banner laranja "Ver mapa interativo" (usado no desktop e no mobile).
 export function BannerMapa({
   className = "",
   linha = false,
@@ -81,6 +77,7 @@ export function BannerMapa({
         aria-hidden="true"
         className="absolute inset-0 opacity-25 [background-image:radial-gradient(circle_at_20%_30%,#fff_0,transparent_35%),radial-gradient(circle_at_80%_70%,#7c2d12_0,transparent_40%)]"
       />
+
       <IconeSeta size={20} className="relative" />
       <span className="relative">Ver mapa interativo</span>
     </Link>

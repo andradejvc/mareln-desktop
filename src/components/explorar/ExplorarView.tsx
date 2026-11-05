@@ -77,6 +77,10 @@ export default function ExplorarView() {
     setCategoria(null);
   }
 
+  function alternarFiltros() {
+    setFiltrosAbertos((atual) => !atual);
+  }
+
   return (
     <div className="mx-auto w-full max-w-xl pb-10 lg:max-w-7xl lg:px-6 lg:py-5">
       {/* Topo: faixa laranja no celular, navbar no desktop */}
@@ -120,11 +124,12 @@ export default function ExplorarView() {
           </span>
         </h1>
 
-        {/* Busca + filtro de categorias */}
+        {/* Busca e filtro de categorias no celular */}
         <div className="lg:hidden">
           <div className="mt-4 flex items-center gap-2">
             <label className="flex flex-1 items-center gap-2 rounded-full bg-white px-4 py-2.5 text-stone-400 shadow-sm">
               <IconeBusca size={16} />
+
               <span className="sr-only">Buscar eventos</span>
 
               <input
@@ -140,7 +145,8 @@ export default function ExplorarView() {
               type="button"
               aria-label="Filtrar por categoria"
               aria-expanded={filtrosAbertos}
-              onClick={() => setFiltrosAbertos((v) => !v)}
+              aria-controls="filtros-categorias"
+              onClick={alternarFiltros}
               className={`grid size-10 shrink-0 place-items-center rounded-full text-mare-rosa ${
                 filtrosAbertos || categoria ? "bg-mare-rosa/15" : ""
               }`}
@@ -162,31 +168,70 @@ export default function ExplorarView() {
               </svg>
             </button>
           </div>
-
-          {filtrosAbertos && (
-            <div
-              className="mt-3 flex flex-wrap gap-2"
-              role="group"
-              aria-label="Categorias"
-            >
-              {categorias.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  aria-pressed={categoria === c}
-                  onClick={() => setCategoria(categoria === c ? null : c)}
-                  className={`rounded-full border px-4 py-1.5 text-sm ${
-                    categoria === c
-                      ? "border-mare-rosa bg-mare-rosa text-white"
-                      : "border-mare-rosa/40 bg-white text-mare-rosa"
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
+
+        {/* Filtro de categorias no desktop */}
+        <div className="mt-6 hidden items-center justify-between lg:flex">
+          <h2 className="text-base font-bold">
+            Filtrar por categoria
+          </h2>
+
+          <button
+            type="button"
+            aria-expanded={filtrosAbertos}
+            aria-controls="filtros-categorias"
+            onClick={alternarFiltros}
+            className={`flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-bold transition-colors ${
+              filtrosAbertos || categoria
+                ? "border-mare-rosa bg-mare-rosa/10 text-mare-rosa"
+                : "border-stone-200 bg-white text-stone-600 hover:border-mare-rosa hover:text-mare-rosa"
+            }`}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1" />
+              <circle cx="16" cy="6" r="2" />
+              <circle cx="10" cy="12" r="2" />
+              <circle cx="18" cy="18" r="2" />
+            </svg>
+
+            {categoria ?? "Selecionar categoria"}
+          </button>
+        </div>
+
+        {/* Categorias compartilhadas entre celular e desktop */}
+        {filtrosAbertos && (
+          <div
+            id="filtros-categorias"
+            className="mt-3 flex flex-wrap gap-2"
+            role="group"
+            aria-label="Categorias"
+          >
+            {categorias.map((c) => (
+              <button
+                key={c}
+                type="button"
+                aria-pressed={categoria === c}
+                onClick={() => setCategoria(categoria === c ? null : c)}
+                className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+                  categoria === c
+                    ? "border-mare-rosa bg-mare-rosa text-white"
+                    : "border-mare-rosa/40 bg-white text-mare-rosa hover:bg-mare-rosa/10"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Cidades */}
         <section aria-labelledby="titulo-cidades" className="mt-6">
