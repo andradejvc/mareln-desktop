@@ -27,7 +27,7 @@ const QUANTIDADE_INICIAL = 9;
 const abas = [
   { href: "/dashboard", label: "Início", Icone: IconeInicio },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
-  { href: "/explorar", label: "Mapa", Icone: IconeSeta },
+  { href: "/mapa", label: "Mapa", Icone: IconeSeta },
   { href: "/favoritos", label: "Favoritos", Icone: IconeCoracao },
   { href: "/perfil", label: "Perfil", Icone: IconeUsuario },
 ];

@@ -54,7 +54,7 @@ export default function LoginForm() {
     salvarUsuario({ nome, email: emailLimpo });
 
     const returnTo = new URLSearchParams(window.location.search).get("returnTo");
-    const destinosPermitidos = ["/explorar", "/perfil", "/favoritos"];
+    const destinosPermitidos = ["/explorar", "/perfil", "/favoritos", "/mapa"];
     const destinoEventoPermitido = /^\/eventos\/\d+$/.test(returnTo ?? "");
 
     const destino =

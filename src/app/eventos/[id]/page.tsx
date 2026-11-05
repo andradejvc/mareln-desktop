@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -10,14 +11,26 @@ type Props = {
   params: Promise<{ id: string }>;
 };
 
+// Gera as páginas dos eventos cadastrados durante o build.
+export function generateStaticParams() {
+  return eventos.map((evento) => ({
+    id: String(evento.id),
+  }));
+}
+
 function buscarEvento(id: string) {
   if (!/^\d+$/.test(id)) return undefined;
+
   const idNumerico = Number(id);
+
   if (!Number.isSafeInteger(idNumerico)) return undefined;
+
   return eventos.find((evento) => evento.id === idNumerico);
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: Props): Promise<Metadata> {
   const { id } = await params;
   const evento = buscarEvento(id);
 

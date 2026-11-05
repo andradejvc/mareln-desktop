@@ -84,7 +84,7 @@ export function BannerMapa({
 }) {
   return (
     <Link
-      href="/explorar"
+      href="/mapa"
       className={`relative flex items-center justify-center overflow-hidden rounded-2xl bg-linear-to-br from-orange-500 to-mare-laranja font-titulo text-lg text-white shadow-sm transition-transform hover:scale-[1.01] ${
         linha ? "flex-row gap-2" : "flex-col gap-1.5"
       } ${className}`}

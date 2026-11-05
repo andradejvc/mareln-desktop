@@ -27,7 +27,7 @@ type ItemMenu = {
 const linksLogado: ItemMenu[] = [
   { href: "/dashboard", label: "Início", Icone: IconeInicio },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
-  { href: "/explorar", label: "Mapa", Icone: IconeSeta },
+  { href: "/mapa", label: "Mapa", Icone: IconeSeta },
   {
     href: "/favoritos",
     label: "Favoritos",
@@ -40,7 +40,7 @@ const linksLogado: ItemMenu[] = [
 const linksVisitante: ItemMenu[] = [
   { href: "/", label: "Início", Icone: IconeInicio },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
-  { href: "/explorar", label: "Mapa", Icone: IconeSeta },
+  { href: "/mapa", label: "Mapa", Icone: IconeSeta },
 ];
 
 export default function DashboardNavbar({

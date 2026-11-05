@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cherry_Cream_Soda, Elsie, Playfair_Display } from "next/font/google";
+import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
 const cherry = Cherry_Cream_Soda({

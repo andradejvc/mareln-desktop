@@ -31,7 +31,7 @@ type Props = {
 const abas = [
   { href: "/dashboard", label: "Início", Icone: IconeInicio, ativo: true },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
-  { href: "/explorar", label: "Mapa", Icone: IconeSeta },
+  { href: "/mapa", label: "Mapa", Icone: IconeSeta },
   { href: "/favoritos", label: "Favoritos", Icone: IconeCoracao },
   { href: "/perfil", label: "Perfil", Icone: IconeUsuario },
 ];

@@ -10,7 +10,7 @@ import {
   IconeUsuario,
 } from "../dashboard/icons";
 
-type PaginaAtiva = "Explorar" | "Favoritos" | "Detalhes";
+type PaginaAtiva = "Explorar" | "Mapa" | "Favoritos" | "Detalhes";
 
 type Props = {
   sessao?: "carregando" | "visitante" | "logado";
@@ -26,7 +26,7 @@ type ItemMenu = {
 const menuLogado: ItemMenu[] = [
   { href: "/dashboard", label: "Início", Icone: IconeInicio },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
-  { href: "/explorar", label: "Mapa", Icone: IconeSeta },
+  { href: "/mapa", label: "Mapa", Icone: IconeSeta },
   { href: "/favoritos", label: "Favoritos", Icone: IconeCoracao },
   { href: "/perfil", label: "Perfil", Icone: IconeUsuario },
 ];
@@ -34,7 +34,7 @@ const menuLogado: ItemMenu[] = [
 const menuVisitante: ItemMenu[] = [
   { href: "/", label: "Início", Icone: IconeInicio },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
-  { href: "/explorar", label: "Mapa", Icone: IconeSeta },
+  { href: "/mapa", label: "Mapa", Icone: IconeSeta },
 ];
 
 export default function CabecalhoMobile({
@@ -134,7 +134,6 @@ export default function CabecalhoMobile({
                 >
                   Entrar
                 </Link>
-
                 <Link
                   href="/registro"
                   onClick={() => setAberto(false)}

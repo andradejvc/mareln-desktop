@@ -95,8 +95,8 @@ function BotaoAcao({
             type="button"
             onClick={onClick}
             className={`w-full rounded-xl px-5 py-3 text-center font-titulo text-base font-bold transition hover:brightness-95 ${variante === "vermelho"
-                    ? "bg-red-700 text-white"
-                    : "bg-mare-creme text-stone-900"
+                ? "bg-red-700 text-white"
+                : "bg-mare-creme text-stone-900"
                 }`}
         >
             {children}
@@ -643,6 +643,14 @@ export default function PerfilView() {
                             >
                                 Explorar
                             </Link>
+
+                            <Link
+                                href="/mapa"
+                                className="block rounded-xl px-4 py-3 text-sm hover:bg-stone-50"
+                            >
+                                Mapa
+                            </Link>
+
                             <Link
                                 href="/dashboard#favoritos-mobile"
                                 className="block rounded-xl px-4 py-3 text-sm hover:bg-stone-50"
@@ -875,7 +883,7 @@ export default function PerfilView() {
                         {[
                             { href: "/dashboard", label: "Início", Icone: IconeInicio },
                             { href: "/explorar", label: "Explorar", Icone: IconeBusca },
-                            { href: "/explorar", label: "Mapa", Icone: IconeSeta },
+                            { href: "/mapa", label: "Mapa", Icone: IconeSeta },
                             {
                                 href: "/dashboard#favoritos-mobile",
                                 label: "Favoritos",
@@ -888,8 +896,8 @@ export default function PerfilView() {
                                     href={href}
                                     aria-current={label === "Perfil" ? "page" : undefined}
                                     className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${label === "Perfil"
-                                            ? "font-bold text-mare-laranja"
-                                            : "text-stone-400"
+                                        ? "font-bold text-mare-laranja"
+                                        : "text-stone-400"
                                         }`}
                                 >
                                     <Icone size={22} />

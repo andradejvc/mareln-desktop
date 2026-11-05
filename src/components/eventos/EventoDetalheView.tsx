@@ -30,7 +30,7 @@ type Props = {
 const abas = [
   { href: "/dashboard", label: "Início", Icone: IconeInicio },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
-  { href: "/explorar", label: "Mapa", Icone: IconeSeta },
+  { href: "/mapa", label: "Mapa", Icone: IconeSeta },
   { href: "/favoritos", label: "Favoritos", Icone: IconeCoracao },
   { href: "/perfil", label: "Perfil", Icone: IconeUsuario },
 ];
@@ -245,9 +245,12 @@ export default function EventoDetalheView({ evento, detalhes }: Props) {
                   {evento.local}, {evento.cidade}
                 </span>
               </p>
-              <p className="mt-3 text-xs leading-relaxed text-stone-500">
-                O mapa interativo será conectado na etapa de integração da API de localização.
-              </p>
+              <Link
+                href={`/mapa?evento=${evento.id}`}
+                className="mt-4 inline-flex rounded-full bg-mare-laranja px-4 py-2 text-xs font-bold text-white transition hover:opacity-90"
+              >
+                Ver no mapa
+              </Link>
             </section>
           </aside>
         </div>
