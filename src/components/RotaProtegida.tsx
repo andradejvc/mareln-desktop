@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, type ReactNode } from "react";
@@ -7,7 +6,11 @@ import { useSessao } from "@/lib/usuario";
 
 type Props = {
   children: ReactNode;
-  destinoAposLogin?: "/dashboard" | "/explorar" | "/perfil";
+  destinoAposLogin?:
+    | "/dashboard"
+    | "/explorar"
+    | "/perfil"
+    | "/favoritos";
 };
 
 export default function RotaProtegida({

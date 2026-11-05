@@ -1,8 +1,8 @@
-
 "use client";
 
 import Link from "next/link";
 import { useState } from "react";
+
 import {
   IconeBusca,
   IconeCoracao,
@@ -13,6 +13,7 @@ import {
 
 type Props = {
   sessao?: "carregando" | "visitante" | "logado";
+  paginaAtiva?: "Explorar" | "Favoritos";
 };
 
 type ItemMenu = {
@@ -24,29 +25,31 @@ type ItemMenu = {
 
 const menuLogado: ItemMenu[] = [
   { href: "/dashboard", label: "Início", Icone: IconeInicio },
-  { href: "/explorar", label: "Explorar", Icone: IconeBusca, ativo: true },
+  { href: "/explorar", label: "Explorar", Icone: IconeBusca },
   { href: "/explorar", label: "Mapa", Icone: IconeSeta },
-  {
-    href: "/dashboard#favoritos-mobile",
-    label: "Favoritos",
-    Icone: IconeCoracao,
-  },
+  { href: "/favoritos", label: "Favoritos", Icone: IconeCoracao },
   { href: "/perfil", label: "Perfil", Icone: IconeUsuario },
 ];
 
 const menuVisitante: ItemMenu[] = [
   { href: "/", label: "Início", Icone: IconeInicio },
-  { href: "/explorar", label: "Explorar", Icone: IconeBusca, ativo: true },
+  { href: "/explorar", label: "Explorar", Icone: IconeBusca },
   { href: "/explorar", label: "Mapa", Icone: IconeSeta },
 ];
 
 export default function CabecalhoMobile({
   sessao = "logado",
+  paginaAtiva = "Explorar",
 }: Props) {
   const [aberto, setAberto] = useState(false);
 
   const logado = sessao === "logado";
-  const menu = logado ? menuLogado : menuVisitante;
+  const menuBase = logado ? menuLogado : menuVisitante;
+
+  const menu = menuBase.map((item) => ({
+    ...item,
+    ativo: item.label === (logado ? paginaAtiva : "Explorar"),
+  }));
 
   return (
     <header

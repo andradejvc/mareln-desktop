@@ -29,7 +29,7 @@ const linksLogado: ItemMenu[] = [
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
   { href: "/explorar", label: "Mapa", Icone: IconeSeta },
   {
-    href: "/dashboard#favoritos",
+    href: "/favoritos",
     label: "Favoritos",
     Icone: IconeCoracao,
     favoritos: true,

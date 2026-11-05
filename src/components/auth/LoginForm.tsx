@@ -57,7 +57,7 @@ export default function LoginForm() {
 
     const returnTo = new URLSearchParams(window.location.search).get("returnTo");
 
-    const destinosPermitidos = ["/explorar", "/perfil"];
+    const destinosPermitidos = ["/explorar", "/perfil", "/favoritos"];
 
     const destino = destinosPermitidos.includes(returnTo ?? "")
       ? returnTo!

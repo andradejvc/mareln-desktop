@@ -337,7 +337,7 @@ export default function DashboardView() {
             <CardSidebar
               id="favoritos"
               titulo="Meus favoritos"
-              acao={{ href: "#favoritos", label: "Ver todos" }}
+              acao={{ href: "/favoritos", label: "Ver todos" }}
             >
               {meusFavoritos.length === 0 ? (
                 <p className="text-xs text-stone-500">

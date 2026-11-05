@@ -28,7 +28,7 @@ const abas = [
   { href: "/dashboard", label: "Início", Icone: IconeInicio, ativo: true },
   { href: "/explorar", label: "Explorar", Icone: IconeBusca },
   { href: "/explorar", label: "Mapa", Icone: IconeSeta },
-  { href: "#favoritos-mobile", label: "Favoritos", Icone: IconeCoracao },
+  { href: "/favoritos", label: "Favoritos", Icone: IconeCoracao },
   { href: "/perfil", label: "Perfil", Icone: IconeUsuario },
 ];
 
@@ -192,7 +192,7 @@ export default function DashboardMobile({
           <section aria-label="Acontecendo hoje">
             <TituloSecao
               titulo="Acontecendo hoje"
-              acao={{ href: "/explorar", label: "Ver tudo →" }}
+              acao={{ href: "/favoritos", label: "Ver todos →" }}
             />
 
             <div className={faixa}>
@@ -233,7 +233,7 @@ export default function DashboardMobile({
         >
           <TituloSecao
             titulo="Meus favoritos"
-            acao={{ href: "#favoritos-mobile", label: "Ver todos →" }}
+            acao={{ href: "/favoritos", label: "Ver todos →" }}
           />
 
           {meusFavoritos.length === 0 ? (
