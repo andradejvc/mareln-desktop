@@ -8,7 +8,7 @@ import AuthInput from "./AuthInput";
 import GoogleButton from "./GoogleButton";
 import Divisor from "./Divisor";
 
-// Conta de teste (temporária) — troque pela API de login quando existir
+// Conta de teste (temporária) — trocar pela API de login quando existir
 const EMAIL_TESTE = "teste@mare.com";
 const SENHA_TESTE = "123456";
 
@@ -24,27 +24,46 @@ export default function LoginForm() {
 
     const novosErros: { email?: string; senha?: string } = {};
 
-    if (!email.trim()) novosErros.email = "Informe seu email.";
-    else if (!/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(email.trim())) novosErros.email = "Digite um email válido.";
+    if (!email.trim()) {
+      novosErros.email = "Informe seu email.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(email.trim())) {
+      novosErros.email = "Digite um email válido.";
+    }
 
-    if (!senha) novosErros.senha = "Informe sua senha.";
-    else if (senha.length < 6) novosErros.senha = "A senha precisa ter pelo menos 6 caracteres.";
+    if (!senha) {
+      novosErros.senha = "Informe sua senha.";
+    } else if (senha.length < 6) {
+      novosErros.senha = "A senha precisa ter pelo menos 6 caracteres.";
+    }
 
     setErros(novosErros);
+
     if (Object.keys(novosErros).length > 0) return;
 
-    // TODO: trocar por chamada à API de autenticação
+    // Validação temporária das credenciais.
     if (email.trim().toLowerCase() !== EMAIL_TESTE || senha !== SENHA_TESTE) {
       setErros({ senha: "Email ou senha incorretos." });
       return;
     }
 
-    // Guarda só nome e e-mail (nunca a senha) para o dashboard usar.
+    // Salva os dados do usuário antes de redirecionar.
+    // A senha nunca é armazenada no localStorage.
+    const emailLimpo = email.trim().toLowerCase();
+    const salvo = lerUsuario();
+
+    const nome =
+      salvo && salvo.email === emailLimpo
+        ? salvo.nome
+        : nomeDoEmail(emailLimpo);
+
+    salvarUsuario({ nome, email: emailLimpo });
+
+    // Retorna para a página que o visitante tentou acessar.
     const returnTo = new URLSearchParams(window.location.search).get("returnTo");
 
-    const destino = returnTo === "/explorar"
-      ? "/explorar"
-      : "/dashboard";
+    // Aceita somente destinos internos autorizados.
+    const destino =
+      returnTo === "/explorar" ? "/explorar" : "/dashboard";
 
     router.push(destino);
   }
@@ -63,6 +82,7 @@ export default function LoginForm() {
           onChange={setEmail}
           erro={erros.email}
         />
+
         <AuthInput
           id="senha"
           name="senha"
@@ -85,7 +105,11 @@ export default function LoginForm() {
             />
             Lembre-se
           </label>
-          <Link href="#" className="font-semibold text-mare-laranja underline underline-offset-2">
+
+          <Link
+            href="#"
+            className="font-semibold text-mare-laranja underline underline-offset-2"
+          >
             Esqueceu a senha?
           </Link>
         </div>
@@ -103,7 +127,10 @@ export default function LoginForm() {
 
       <p className="mt-6 text-center text-xs text-gray-500">
         Ainda não tem uma conta?{" "}
-        <Link href="/registro" className="font-semibold text-mare-laranja underline underline-offset-2">
+        <Link
+          href="/registro"
+          className="font-semibold text-mare-laranja underline underline-offset-2"
+        >
           Cadastra-se.
         </Link>
       </p>
