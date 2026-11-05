@@ -3,15 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { cidades, type Cidade } from "@/data/eventos";
+import { cidades, eventos, type Cidade } from "@/data/eventos";
 import {
   dataDeHoje,
   eventosDashboard,
-  favoritosIniciais,
   sugestoesIds,
   type EventoDashboard,
 } from "@/data/dashboard";
 import { useUsuario } from "@/lib/usuario";
+import { useFavoritos } from "@/lib/favoritos";
 import DashboardMobile from "./DashboardMobile";
 import DashboardNavbar from "./DashboardNavbar";
 import { IconeCalendario, IconeCoracao, IconePino } from "./icons";
@@ -76,13 +76,8 @@ export default function DashboardView() {
   const nomeUsuario = usuario?.nome ?? "Visitante";
 
   const [cidade, setCidade] = useState<Cidade | null>(null);
-  const [favoritos, setFavoritos] = useState<number[]>(favoritosIniciais);
 
-  function alternarFavorito(id: number) {
-    setFavoritos((atual) =>
-      atual.includes(id) ? atual.filter((f) => f !== id) : [...atual, id],
-    );
-  }
+  const { favoritos, alternarFavorito } = useFavoritos();
 
   const hoje = eventosDashboard.filter((e) => e.hoje);
   const [destaque, ...outrosHoje] = hoje;
@@ -91,11 +86,13 @@ export default function DashboardView() {
     (e) => !e.hoje && (!cidade || e.cidade === cidade),
   );
 
-  const meusFavoritos = eventosDashboard.filter((e) =>
-    favoritos.includes(e.id),
-  );
+  // Agora considera os 14 eventos, inclusive os que não aparecem
+  // diretamente nas seções principais do Dashboard.
+  const meusFavoritos = eventos.filter((e) => favoritos.includes(e.id));
 
-  const sugestoes = eventosDashboard.filter((e) => sugestoesIds.includes(e.id));
+  const sugestoes = eventosDashboard.filter((e) =>
+    sugestoesIds.includes(e.id),
+  );
 
   const contagem = (c: Cidade) =>
     eventosDashboard.filter((e) => e.cidade === c).length;
@@ -353,7 +350,9 @@ export default function DashboardView() {
                       <Miniatura evento={e} tamanho="size-11" />
 
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold">{e.titulo}</p>
+                        <p className="truncate text-sm font-bold">
+                          {e.titulo}
+                        </p>
 
                         <p className="text-xs text-stone-400">
                           {e.data} • {e.cidade}

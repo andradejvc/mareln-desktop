@@ -7,11 +7,11 @@ import { useMemo, useState } from "react";
 import {
   categorias,
   eventos,
-  favoritosIniciais,
   type Categoria,
   type Cidade,
 } from "@/data/eventos";
 import { useSessao } from "@/lib/usuario";
+import { useFavoritos } from "@/lib/favoritos";
 import DashboardNavbar from "../dashboard/DashboardNavbar";
 import { IconeBusca, IconePino } from "../dashboard/icons";
 import { BotaoFavorito } from "../dashboard/partes";
@@ -47,7 +47,11 @@ export default function ExplorarView() {
   const [cidade, setCidade] = useState<Cidade | null>(null);
   const [categoria, setCategoria] = useState<Categoria | null>(null);
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
-  const [favoritos, setFavoritos] = useState<number[]>(favoritosIniciais);
+
+  const {
+    favoritos,
+    alternarFavorito: alternarFavoritoSalvo,
+  } = useFavoritos();
 
   const filtrados = useMemo(
     () => eventos.filter((e) => combina(e, busca, cidade, categoria)),
@@ -64,11 +68,7 @@ export default function ExplorarView() {
 
     if (sessao !== "logado") return;
 
-    setFavoritos((atual) =>
-      atual.includes(id)
-        ? atual.filter((f) => f !== id)
-        : [...atual, id],
-    );
+    alternarFavoritoSalvo(id);
   }
 
   function limparFiltros() {
@@ -172,9 +172,7 @@ export default function ExplorarView() {
 
         {/* Filtro de categorias no desktop */}
         <div className="mt-6 hidden items-center justify-between lg:flex">
-          <h2 className="text-base font-bold">
-            Filtrar por categoria
-          </h2>
+          <h2 className="text-base font-bold">Filtrar por categoria</h2>
 
           <button
             type="button"
