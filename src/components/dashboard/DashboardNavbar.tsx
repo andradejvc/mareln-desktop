@@ -64,11 +64,11 @@ export default function DashboardNavbar({
         href={logado ? "/dashboard" : "/"}
         className="flex shrink-0 items-center gap-2.5"
       >
-        <span className="font-titulo grid size-9 place-items-center rounded-xl bg-mare-laranja text-lg font-extrabold text-white">
-          M
+        <span className="font-titulo grid place-items-center rounded-xl text-lg font-extrabold text-mare-laranja">
+          Maré
         </span>
         <span className="font-titulo hidden text-lg font-bold text-mare-laranja sm:inline">
-          Maré LN
+          LN
         </span>
       </Link>
 
