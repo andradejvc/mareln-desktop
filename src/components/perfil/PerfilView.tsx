@@ -14,7 +14,11 @@ import {
     type Cidade,
     type Categoria,
 } from "@/data/eventos";
-import { useUsuario, salvarUsuario } from "@/lib/usuario";
+import {
+    useUsuario,
+    salvarUsuario,
+    encerrarSessao,
+} from "@/lib/usuario";
 import { useFavoritos } from "@/lib/favoritos";
 import {
     lerFotoPerfil,
@@ -318,9 +322,7 @@ export default function PerfilView() {
 
     function sairDaConta() {
         try {
-            localStorage.removeItem("usuario");
-            localStorage.removeItem("isLogged");
-            window.dispatchEvent(new Event("usuario-mudou"));
+            encerrarSessao();
             router.replace("/login");
         } catch {
             setAviso("Não foi possível encerrar a sessão neste navegador.");
