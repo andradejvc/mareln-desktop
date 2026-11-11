@@ -107,6 +107,27 @@ export function salvarSessao(
   window.dispatchEvent(new Event(EVENTO));
 }
 
+// Atualiza os tokens sem encerrar a sessão atual.
+export function atualizarTokens(
+  accessToken: string,
+  refreshToken: string,
+) {
+  if (!accessToken || !refreshToken) {
+    throw new Error("A API não retornou os novos tokens.");
+  }
+
+  const storage = obterArmazenamentoAtual();
+
+  if (!storage) {
+    throw new Error("Nenhuma sessão ativa foi encontrada.");
+  }
+
+  storage.setItem(CHAVE_ACCESS, accessToken);
+  storage.setItem(CHAVE_REFRESH, refreshToken);
+
+  window.dispatchEvent(new Event(EVENTO));
+}
+
 export function salvarUsuario(usuario: Usuario) {
   const storage = obterArmazenamentoAtual() ?? localStorage;
   const atual = lerUsuario();

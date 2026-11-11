@@ -1,84 +1,150 @@
+
 "use client";
 
-import { useCallback, useMemo, useSyncExternalStore } from "react";
-import { favoritosIniciais } from "@/data/eventos";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
-const CHAVE = "mareln-favoritos";
-const EVENTO = "favoritos-mudou";
+import {
+  adicionarFavorito,
+  listarFavoritos,
+  removerFavorito,
+} from "@/lib/favoritos-api";
 
-function lerBruto(): string | null {
-  try {
-    return localStorage.getItem(CHAVE);
-  } catch {
-    return null;
-  }
-}
-
-function converter(bruto: string | null | undefined): number[] {
-  if (bruto === null || bruto === undefined) {
-    return [...favoritosIniciais];
-  }
-
-  try {
-    const dados: unknown = JSON.parse(bruto);
-
-    if (!Array.isArray(dados)) {
-      return [...favoritosIniciais];
-    }
-
-    return Array.from(
-      new Set(
-        dados.filter(
-          (id): id is number =>
-            typeof id === "number" &&
-            Number.isSafeInteger(id) &&
-            id > 0,
-        ),
-      ),
-    );
-  } catch {
-    return [...favoritosIniciais];
-  }
-}
-
-function assinar(aviso: () => void) {
-  window.addEventListener("storage", aviso);
-  window.addEventListener(EVENTO, aviso);
-
-  return () => {
-    window.removeEventListener("storage", aviso);
-    window.removeEventListener(EVENTO, aviso);
-  };
-}
+import { useSessao } from "@/lib/usuario";
 
 export function useFavoritos() {
-  const bruto = useSyncExternalStore<string | null | undefined>(
-    assinar,
-    lerBruto,
-    () => undefined,
-  );
+  const { usuario, pronta } = useSessao();
 
-  const favoritos = useMemo(() => converter(bruto), [bruto]);
+  const [favoritos, setFavoritos] = useState<number[]>([]);
+  const [carregandoFavoritos, setCarregandoFavoritos] = useState(true);
+  const [erroFavoritos, setErroFavoritos] = useState<string | null>(null);
+  const [atualizandoFavoritos, setAtualizandoFavoritos] = useState<
+    number[]
+  >([]);
 
-  const alternarFavorito = useCallback((id: number) => {
-    if (!Number.isSafeInteger(id) || id <= 0) return;
+  const atualizandoRef = useRef(new Set<number>());
 
-    const atuais = converter(lerBruto());
+  // Carrega os favoritos pertencentes ao usuário autenticado.
+  useEffect(() => {
+    let ativo = true;
 
-    const atualizados = atuais.includes(id)
-      ? atuais.filter((favorito) => favorito !== id)
-      : [...atuais, id];
+    async function carregarFavoritos() {
+      if (!pronta) return;
 
-    try {
-      localStorage.setItem(CHAVE, JSON.stringify(atualizados));
-      window.dispatchEvent(new Event(EVENTO));
-    } catch {
-      // Impede que uma restrição do navegador interrompa a interface.
+      if (!usuario) {
+        setFavoritos([]);
+        setErroFavoritos(null);
+        setCarregandoFavoritos(false);
+        return;
+      }
+
+      if (!usuario.id) {
+        setFavoritos([]);
+        setErroFavoritos("Não foi possível identificar sua conta.");
+        setCarregandoFavoritos(false);
+        return;
+      }
+
+      setCarregandoFavoritos(true);
+      setErroFavoritos(null);
+      setFavoritos([]);
+
+      try {
+        const resposta = await listarFavoritos();
+
+        if (ativo) {
+          setFavoritos(resposta);
+        }
+      } catch (erro) {
+        if (ativo) {
+          setFavoritos([]);
+          setErroFavoritos(
+            erro instanceof Error
+              ? erro.message
+              : "Não foi possível carregar seus favoritos.",
+          );
+        }
+      } finally {
+        if (ativo) {
+          setCarregandoFavoritos(false);
+        }
+      }
     }
-  }, []);
+
+    void carregarFavoritos();
+
+    return () => {
+      ativo = false;
+    };
+  }, [usuario?.id, pronta, usuario]);
+
+  // Adiciona ou remove um favorito no PostgreSQL.
+  const alternarFavorito = useCallback(
+    async (id: number) => {
+      if (!Number.isSafeInteger(id) || id <= 0) return;
+
+      if (!usuario?.id) {
+        setErroFavoritos("Entre na sua conta para salvar favoritos.");
+        return;
+      }
+
+      if (atualizandoRef.current.has(id)) return;
+
+      atualizandoRef.current.add(id);
+
+      setAtualizandoFavoritos((atuais) => [...atuais, id]);
+      setErroFavoritos(null);
+
+      const jaFavoritado = favoritos.includes(id);
+
+      try {
+        if (jaFavoritado) {
+          await removerFavorito(id);
+
+          setFavoritos((atuais) =>
+            atuais.filter((favorito) => favorito !== id),
+          );
+        } else {
+          await adicionarFavorito(id);
+
+          setFavoritos((atuais) =>
+            atuais.includes(id) ? atuais : [...atuais, id],
+          );
+        }
+      } catch (erro) {
+        setErroFavoritos(
+          erro instanceof Error
+            ? erro.message
+            : "Não foi possível atualizar seus favoritos.",
+        );
+
+        // Reconsulta o backend para manter a interface sincronizada.
+        try {
+          const resposta = await listarFavoritos();
+          setFavoritos(resposta);
+        } catch {
+          // Mantém a mensagem do erro original.
+        }
+      } finally {
+        atualizandoRef.current.delete(id);
+
+        setAtualizandoFavoritos((atuais) =>
+          atuais.filter((favorito) => favorito !== id),
+        );
+      }
+    },
+    [favoritos, usuario?.id],
+  );
 
   return {
     favoritos,
     alternarFavorito,
+    carregandoFavoritos,
+    erroFavoritos,
+    atualizandoFavoritos,
   };
 }
