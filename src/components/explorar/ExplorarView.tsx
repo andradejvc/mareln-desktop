@@ -1,70 +1,140 @@
+
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import {
   categorias,
-  eventos,
   type Categoria,
   type Cidade,
 } from "@/data/eventos";
+
+import {
+  listarEventos,
+  type EventoExplorar,
+} from "@/lib/eventos-api";
+
 import { useSessao } from "@/lib/usuario";
 import { useFavoritos } from "@/lib/favoritos";
+
 import DashboardNavbar from "../dashboard/DashboardNavbar";
 import { IconeBusca, IconePino } from "../dashboard/icons";
-import { BotaoFavorito, LinkDetalhesEvento } from "../dashboard/partes";
+import {
+  BotaoFavorito,
+  LinkDetalhesEvento,
+} from "../dashboard/partes";
+
 import CabecalhoMobile from "./CabecalhoMobile";
 import FiltroCidades from "./FiltroCidades";
 
 function combina(
-  e: (typeof eventos)[number],
+  evento: EventoExplorar,
   busca: string,
   cidade: Cidade | null,
   categoria: Categoria | null,
 ) {
-  if (cidade && e.cidade !== cidade) return false;
-  if (categoria && e.categoria !== categoria) return false;
+  if (cidade && evento.cidade !== cidade) return false;
+  if (categoria && evento.categoria !== categoria) return false;
 
   const termo = busca.trim().toLowerCase();
 
   if (!termo) return true;
 
-  return [e.titulo, e.local, e.cidade, e.categoria].some((campo) =>
-    campo.toLowerCase().includes(termo),
-  );
+  return [
+    evento.titulo,
+    evento.local,
+    evento.cidade ?? "",
+    evento.categoria,
+  ].some((campo) => campo.toLowerCase().includes(termo));
 }
 
 export default function ExplorarView() {
   const router = useRouter();
+
   const { usuario, pronta } = useSessao();
-  const sessao = !pronta ? "carregando" : usuario ? "logado" : "visitante";
+
+  const sessao = !pronta
+    ? "carregando"
+    : usuario
+      ? "logado"
+      : "visitante";
 
   const [busca, setBusca] = useState("");
   const [cidade, setCidade] = useState<Cidade | null>(null);
   const [categoria, setCategoria] = useState<Categoria | null>(null);
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
 
+  const [eventos, setEventos] = useState<EventoExplorar[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erroCarregamento, setErroCarregamento] = useState<string | null>(
+    null,
+  );
+  const [tentativa, setTentativa] = useState(0);
+
   const {
     favoritos,
     alternarFavorito: alternarFavoritoSalvo,
   } = useFavoritos();
 
+  // Busca os eventos reais do backend.
+  useEffect(() => {
+    let ativo = true;
+
+    async function carregarEventos() {
+      setCarregando(true);
+      setErroCarregamento(null);
+
+      try {
+        const resposta = await listarEventos();
+
+        if (ativo) {
+          setEventos(resposta);
+        }
+      } catch (erro) {
+        if (ativo) {
+          setErroCarregamento(
+            erro instanceof Error
+              ? erro.message
+              : "Não foi possível carregar os eventos.",
+          );
+        }
+      } finally {
+        if (ativo) {
+          setCarregando(false);
+        }
+      }
+    }
+
+    void carregarEventos();
+
+    return () => {
+      ativo = false;
+    };
+  }, [tentativa]);
+
+  // Mantém os filtros existentes.
   const filtrados = useMemo(
-    () => eventos.filter((e) => combina(e, busca, cidade, categoria)),
-    [busca, cidade, categoria],
+    () =>
+      eventos.filter((evento) =>
+        combina(evento, busca, cidade, categoria),
+      ),
+    [eventos, busca, cidade, categoria],
   );
 
-  const favoritosVisiveis = sessao === "logado" ? favoritos : [];
+  const favoritosVisiveis =
+    sessao === "logado" ? favoritos : [];
 
   function alternarFavorito(id: number) {
     if (sessao === "visitante") {
-      router.push("/login");
+      router.push("/login?returnTo=/explorar");
       return;
     }
 
     if (sessao !== "logado") return;
+
     alternarFavoritoSalvo(id);
   }
 
@@ -164,7 +234,9 @@ export default function ExplorarView() {
         </div>
 
         <div className="mt-6 hidden items-center justify-between lg:flex">
-          <h2 className="text-base font-bold">Filtrar por categoria</h2>
+          <h2 className="text-base font-bold">
+            Filtrar por categoria
+          </h2>
 
           <button
             type="button"
@@ -208,7 +280,9 @@ export default function ExplorarView() {
                 key={c}
                 type="button"
                 aria-pressed={categoria === c}
-                onClick={() => setCategoria(categoria === c ? null : c)}
+                onClick={() =>
+                  setCategoria(categoria === c ? null : c)
+                }
                 className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
                   categoria === c
                     ? "border-mare-rosa bg-mare-rosa text-white"
@@ -228,7 +302,11 @@ export default function ExplorarView() {
           >
             Cidades
           </h2>
-          <FiltroCidades selecionada={cidade} onSelecionar={setCidade} />
+
+          <FiltroCidades
+            selecionada={cidade}
+            onSelecionar={setCidade}
+          />
         </section>
 
         <section aria-labelledby="titulo-eventos" className="mt-8">
@@ -239,9 +317,42 @@ export default function ExplorarView() {
             {cidade ? `Eventos em ${cidade}` : "Próximos eventos"}
           </h2>
 
-          {filtrados.length === 0 ? (
+          {carregando ? (
+            <div
+              role="status"
+              className="rounded-2xl bg-white p-8 text-center shadow-sm"
+            >
+              <p className="font-semibold text-stone-700">
+                Carregando eventos...
+              </p>
+              <p className="mt-1 text-sm text-stone-500">
+                Buscando eventos no Maré LN.
+              </p>
+            </div>
+          ) : erroCarregamento ? (
+            <div
+              role="alert"
+              className="rounded-2xl bg-white p-8 text-center shadow-sm"
+            >
+              <p className="font-bold text-stone-800">
+                Não foi possível carregar os eventos.
+              </p>
+              <p className="mt-2 text-sm text-stone-500">
+                {erroCarregamento}
+              </p>
+              <button
+                type="button"
+                onClick={() => setTentativa((atual) => atual + 1)}
+                className="mt-4 rounded-full bg-mare-rosa px-5 py-2 text-sm font-bold text-white"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          ) : filtrados.length === 0 ? (
             <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-              <p className="font-bold">Nenhum evento encontrado.</p>
+              <p className="font-bold">
+                Nenhum evento encontrado.
+              </p>
               <p className="mt-1 text-sm text-stone-500">
                 Tente outra busca ou limpe os filtros.
               </p>
@@ -274,17 +385,22 @@ export default function ExplorarView() {
                     <span className="text-[10px] font-bold uppercase tracking-wide text-mare-rosa lg:hidden">
                       {e.categoria}
                     </span>
+
                     <h3 className="font-card text-base leading-tight">
                       {e.titulo}
                     </h3>
+
                     <p className="mt-1 text-[11px] text-stone-500 lg:text-sm lg:text-stone-600">
                       {e.data} • {e.hora}
                     </p>
+
                     <p className="flex items-center gap-1.5 text-[11px] text-stone-500 lg:mt-1 lg:text-xs lg:text-stone-700">
                       <span className="hidden lg:inline">
                         <IconePino size={13} />
                       </span>
-                      {e.local}, {e.cidade}
+                      {e.cidade
+                        ? `${e.local}, ${e.cidade}`
+                        : e.local}
                     </p>
                   </div>
 
@@ -294,6 +410,7 @@ export default function ExplorarView() {
                     onAlternar={alternarFavorito}
                     className="absolute right-3 top-3 shadow"
                   />
+
                   <LinkDetalhesEvento evento={e} />
                 </li>
               ))}
