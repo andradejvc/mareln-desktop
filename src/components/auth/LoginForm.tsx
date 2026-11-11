@@ -85,6 +85,7 @@ export default function LoginForm() {
         "/mapa",
         "/divulgar-evento",
         "/meus-eventos",
+        "/admin/eventos",
       ];
 
       const destinoEventoPermitido =

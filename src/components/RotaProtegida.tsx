@@ -11,8 +11,9 @@ type DestinoProtegido =
   | "/favoritos"
   | "/divulgar-evento"
   | "/meus-eventos"
+  | "/admin/eventos"
   | `/eventos/${number}`;
-
+  
 type Props = {
   children: ReactNode;
   destinoAposLogin?: DestinoProtegido;
