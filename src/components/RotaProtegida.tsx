@@ -9,6 +9,8 @@ type DestinoProtegido =
   | "/explorar"
   | "/perfil"
   | "/favoritos"
+  | "/divulgar-evento"
+  | "/meus-eventos"
   | `/eventos/${number}`;
 
 type Props = {

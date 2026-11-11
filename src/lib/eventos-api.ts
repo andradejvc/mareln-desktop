@@ -1,6 +1,7 @@
 
 import { apiRequest } from "@/lib/api";
 import { cidades, type Cidade } from "@/data/eventos";
+import { lerAccessToken } from "@/lib/usuario";
 
 export type EventoBackend = {
     id: number;
@@ -122,4 +123,75 @@ export async function buscarEventoPorId(
     }
 
     return normalizarEvento(evento);
+}
+
+export type CategoriaBackend = {
+    id: number;
+    nome: string;
+};
+
+export type NovoEvento = {
+    titulo: string;
+    descricao: string;
+    data: string;
+    local: string;
+    categoriaId?: number;
+};
+
+function obterHeadersAutenticados(): HeadersInit {
+    const token = lerAccessToken();
+
+    if (!token) {
+        throw new Error("Sua sessão expirou. Entre novamente.");
+    }
+
+    return {
+        Authorization: `Bearer ${token}`,
+    };
+}
+
+export async function listarCategorias(): Promise<CategoriaBackend[]> {
+    const resposta = await apiRequest<CategoriaBackend[]>(
+        "categorias",
+        {
+            method: "GET",
+            cache: "no-store",
+        },
+    );
+
+    if (!Array.isArray(resposta)) {
+        throw new Error("Não foi possível carregar as categorias.");
+    }
+
+    return resposta;
+}
+
+export async function criarEvento(
+    dados: NovoEvento,
+): Promise<EventoBackend> {
+    return apiRequest<EventoBackend>(
+        "eventos",
+        {
+            method: "POST",
+            headers: obterHeadersAutenticados(),
+            body: JSON.stringify(dados),
+        },
+    );
+}
+
+export async function listarMeusEventos(): Promise<EventoExplorar[]> {
+    const resposta = await apiRequest<EventoBackend[]>(
+        "eventos/meus",
+        {
+            method: "GET",
+            cache: "no-store",
+            headers: obterHeadersAutenticados(),
+        },
+    );
+
+    if (!Array.isArray(resposta)) {
+        throw new Error("A API retornou uma lista de eventos inválida.");
+    }
+
+    return resposta.map(normalizarEvento);
 }

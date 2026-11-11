@@ -116,6 +116,10 @@ export default function PerfilView() {
     const nome = usuario?.nome ?? "Usuário";
     const email = usuario?.email ?? "";
 
+    const podeDivulgar =
+        usuario?.tipo === "DIVULGADOR" ||
+        usuario?.tipo === "ADMIN";
+
     const chaveConta = email || "conta-local";
     const chaveFoto = chaveConta;
     const chavePreferencias = `mareln-perfil-preferencias:${encodeURIComponent(chaveConta)}`;
@@ -342,9 +346,7 @@ export default function PerfilView() {
     }
 
     function abrirAvisoDivulgacao() {
-        setAviso(
-            "A divulgação de eventos por usuários ainda está sendo preparada para uma próxima etapa do Maré LN.",
-        );
+        router.push("/divulgar-evento");
     }
 
     const fotoNoEditor = removerFoto ? null : fotoPreview ?? fotoUrl;
@@ -466,7 +468,7 @@ export default function PerfilView() {
                     {/* Coluna direita */}
                     <div className="min-w-0 space-y-8">
                         {/* Banner de divulgação */}
-                        {bannerVisivel && (
+                        {bannerVisivel && podeDivulgar && (
                             <section className="flex min-h-36 items-center justify-between gap-6 rounded-[2rem] bg-violet-600 px-8 py-7 text-white shadow-lg shadow-violet-900/20">
                                 <div>
                                     <h2 className="font-titulo text-2xl font-bold">
@@ -484,6 +486,12 @@ export default function PerfilView() {
                                 >
                                     BRILHAR
                                 </button>
+                                <Link
+                                    href="/meus-eventos"
+                                    className="shrink-0 rounded-2xl border-2 border-white px-6 py-4 text-center font-titulo text-sm font-bold text-white transition hover:bg-white hover:text-violet-600"
+                                >
+                                    MEUS EVENTOS
+                                </Link>
                             </section>
                         )}
 
@@ -703,7 +711,7 @@ export default function PerfilView() {
                 </header>
 
                 {/* Banner mobile */}
-                {bannerVisivel && (
+                {bannerVisivel && podeDivulgar && (
                     <section className="relative mt-6 flex items-center justify-between gap-3 bg-violet-600 px-5 py-4 text-white">
                         <p className="font-titulo text-base leading-tight">
                             GOSTARIA DE DIVULGAR
@@ -718,6 +726,12 @@ export default function PerfilView() {
                         >
                             DIVULGAR
                         </button>
+                        <Link
+                            href="/meus-eventos"
+                            className="shrink-0 rounded-full border border-white px-3 py-2 text-xs font-bold text-white"
+                        >
+                            MEUS EVENTOS
+                        </Link>
 
                         <button
                             type="button"
