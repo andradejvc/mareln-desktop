@@ -4,8 +4,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
-
+import {
+    useEffect,
+    useMemo,
+    useState,
+    type ChangeEvent,
+    type FormEvent,
+} from "react";
 
 import {
     cidades,
@@ -14,12 +19,15 @@ import {
     type Cidade,
     type Categoria,
 } from "@/data/eventos";
+
 import {
     useUsuario,
     salvarUsuario,
     encerrarSessao,
 } from "@/lib/usuario";
+
 import { useFavoritos } from "@/lib/favoritos";
+
 import {
     lerFotoPerfil,
     salvarFotoPerfil,
@@ -27,6 +35,7 @@ import {
 } from "@/lib/fotoPerfil";
 
 import DashboardNavbar from "../dashboard/DashboardNavbar";
+
 import {
     IconeBusca,
     IconeCalendario,
@@ -90,7 +99,7 @@ function BotaoAcao({
     onClick,
     variante = "claro",
 }: {
-    children: import("react").ReactNode
+    children: import("react").ReactNode;
     onClick: () => void;
     variante?: "claro" | "vermelho";
 }) {
@@ -98,10 +107,11 @@ function BotaoAcao({
         <button
             type="button"
             onClick={onClick}
-            className={`w-full rounded-xl px-5 py-3 text-center font-titulo text-base font-bold transition hover:brightness-95 ${variante === "vermelho"
-                ? "bg-red-700 text-white"
-                : "bg-mare-creme text-stone-900"
-                }`}
+            className={`w-full rounded-xl px-5 py-3 text-center font-titulo text-base font-bold transition hover:brightness-95 ${
+                variante === "vermelho"
+                    ? "bg-red-700 text-white"
+                    : "bg-mare-creme text-stone-900"
+            }`}
         >
             {children}
         </button>
@@ -111,6 +121,7 @@ function BotaoAcao({
 export default function PerfilView() {
     const router = useRouter();
     const usuario = useUsuario();
+
     const { favoritos, alternarFavorito } = useFavoritos();
 
     const nome = usuario?.nome ?? "Usuário";
@@ -122,25 +133,41 @@ export default function PerfilView() {
 
     const chaveConta = email || "conta-local";
     const chaveFoto = chaveConta;
-    const chavePreferencias = `mareln-perfil-preferencias:${encodeURIComponent(chaveConta)}`;
+
+    const chavePreferencias = `mareln-perfil-preferencias:${encodeURIComponent(
+        chaveConta,
+    )}`;
 
     const [fotoUrl, setFotoUrl] = useState<string | null>(null);
+
     const [preferencias, setPreferencias] = useState<Preferencias>(
         preferenciasVazias,
     );
 
     const [editorAberto, setEditorAberto] = useState(false);
+
     const [nomeRascunho, setNomeRascunho] = useState(nome);
+
     const [cidadeRascunho, setCidadeRascunho] = useState<Cidade | "">("");
-    const [interessesRascunho, setInteressesRascunho] = useState<Categoria[]>([]);
+
+    const [interessesRascunho, setInteressesRascunho] = useState<Categoria[]>(
+        [],
+    );
+
     const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+
     const [arquivoFoto, setArquivoFoto] = useState<File | null>(null);
+
     const [removerFoto, setRemoverFoto] = useState(false);
 
     const [erro, setErro] = useState("");
+
     const [salvando, setSalvando] = useState(false);
+
     const [aviso, setAviso] = useState<string | null>(null);
+
     const [menuAberto, setMenuAberto] = useState(false);
+
     const [bannerVisivel, setBannerVisivel] = useState(true);
 
     const eventosMarcados = useMemo(
@@ -192,16 +219,16 @@ export default function PerfilView() {
 
             const cidadeValida =
                 typeof dados.cidade === "string" &&
-                    cidades.includes(dados.cidade as Cidade)
+                cidades.includes(dados.cidade as Cidade)
                     ? (dados.cidade as Cidade)
                     : "";
 
             const interessesValidos = Array.isArray(dados.interesses)
                 ? dados.interesses.filter(
-                    (item): item is Categoria =>
-                        typeof item === "string" &&
-                        categorias.includes(item as Categoria),
-                )
+                      (item): item is Categoria =>
+                          typeof item === "string" &&
+                          categorias.includes(item as Categoria),
+                  )
                 : [];
 
             setPreferencias({
@@ -234,6 +261,7 @@ export default function PerfilView() {
 
     function selecionarFoto(event: ChangeEvent<HTMLInputElement>) {
         const arquivo = event.target.files?.[0];
+
         event.target.value = "";
 
         if (!arquivo) return;
@@ -335,7 +363,9 @@ export default function PerfilView() {
 
     function textoInteresses() {
         return preferencias.interesses.length
-            ? preferencias.interesses.map((item) => nomesCategorias[item]).join(", ")
+            ? preferencias.interesses
+                  .map((item) => nomesCategorias[item])
+                  .join(", ")
             : "Não definidos";
     }
 
@@ -354,6 +384,7 @@ export default function PerfilView() {
     return (
         <main className="min-h-screen bg-mare-creme pb-24 lg:pb-10">
             {/* ===================== DESKTOP ===================== */}
+
             <div className="mx-auto hidden w-full max-w-7xl px-6 py-5 lg:block">
                 <DashboardNavbar
                     sessao="logado"
@@ -364,6 +395,7 @@ export default function PerfilView() {
 
                 <div className="mt-7 grid grid-cols-[410px_minmax(0,1fr)] items-start gap-14">
                     {/* Coluna esquerda */}
+
                     <aside className="space-y-6">
                         <section className="rounded-[2rem] border border-stone-200 bg-white px-7 py-8 text-center">
                             <button
@@ -372,7 +404,11 @@ export default function PerfilView() {
                                 aria-label="Alterar foto e dados do perfil"
                                 className="mx-auto block rounded-full transition hover:scale-[1.03]"
                             >
-                                <Avatar foto={fotoUrl} nome={nome} tamanho="size-36" />
+                                <Avatar
+                                    foto={fotoUrl}
+                                    nome={nome}
+                                    tamanho="size-36"
+                                />
                             </button>
 
                             <h1 className="font-titulo mt-5 text-3xl font-bold text-stone-900">
@@ -387,6 +423,7 @@ export default function PerfilView() {
                                 <span className="rounded-full bg-orange-500 px-4 py-1 text-xs font-bold text-white">
                                     ATIVO
                                 </span>
+
                                 <span className="rounded-full bg-violet-600 px-4 py-1 text-xs font-bold text-white">
                                     MARÉ LN
                                 </span>
@@ -412,6 +449,7 @@ export default function PerfilView() {
                         </section>
 
                         {/* Preferências */}
+
                         <section className="rounded-[2rem] border border-stone-200 bg-white p-7">
                             <h2 className="font-titulo text-2xl font-bold text-stone-900">
                                 PREFERÊNCIAS
@@ -422,6 +460,7 @@ export default function PerfilView() {
                                     <h3 className="mb-2 text-sm font-bold uppercase text-mare-rosa">
                                         CIDADE
                                     </h3>
+
                                     <p className="rounded-xl border border-mare-rosa px-4 py-3 font-titulo text-lg">
                                         {preferencias.cidade || "Não definida"}
                                     </p>
@@ -431,6 +470,7 @@ export default function PerfilView() {
                                     <h3 className="mb-2 text-sm font-bold uppercase text-mare-rosa">
                                         INTERESSES
                                     </h3>
+
                                     <p className="rounded-xl border border-mare-rosa px-4 py-3 font-titulo text-lg">
                                         {textoInteresses()}
                                     </p>
@@ -447,7 +487,19 @@ export default function PerfilView() {
                         </section>
 
                         {/* Ações da conta */}
+
                         <section className="space-y-3 rounded-[2rem] bg-orange-600 p-6">
+                            {/* Acesso exclusivo do administrador */}
+
+                            {usuario?.tipo === "ADMIN" && (
+                                <Link
+                                    href="/admin/eventos"
+                                    className="block w-full rounded-xl border-2 border-white bg-violet-700 px-5 py-3 text-center font-titulo text-base font-bold text-white transition hover:bg-violet-800"
+                                >
+                                    PAINEL ADMINISTRATIVO
+                                </Link>
+                            )}
+
                             <BotaoAcao onClick={abrirAvisoSenha}>
                                 Alterar senha
                             </BotaoAcao>
@@ -459,21 +511,27 @@ export default function PerfilView() {
                                 Meus Favoritos
                             </Link>
 
-                            <BotaoAcao onClick={sairDaConta} variante="vermelho">
+                            <BotaoAcao
+                                onClick={sairDaConta}
+                                variante="vermelho"
+                            >
                                 Sair da conta
                             </BotaoAcao>
                         </section>
                     </aside>
 
                     {/* Coluna direita */}
+
                     <div className="min-w-0 space-y-8">
                         {/* Banner de divulgação */}
+
                         {bannerVisivel && podeDivulgar && (
                             <section className="flex min-h-36 items-center justify-between gap-6 rounded-[2rem] bg-violet-600 px-8 py-7 text-white shadow-lg shadow-violet-900/20">
                                 <div>
                                     <h2 className="font-titulo text-2xl font-bold">
                                         GOSTARIA DE BRILHAR MAIS?
                                     </h2>
+
                                     <p className="mt-2 max-w-lg font-titulo text-lg leading-snug">
                                         Seja vencedor divulgando seus eventos na nossa plataforma!
                                     </p>
@@ -486,6 +544,7 @@ export default function PerfilView() {
                                 >
                                     BRILHAR
                                 </button>
+
                                 <Link
                                     href="/meus-eventos"
                                     className="shrink-0 rounded-2xl border-2 border-white px-6 py-4 text-center font-titulo text-sm font-bold text-white transition hover:bg-white hover:text-violet-600"
@@ -496,6 +555,7 @@ export default function PerfilView() {
                         )}
 
                         {/* Histórico */}
+
                         <section>
                             <h2 className="font-titulo mb-5 text-3xl font-bold text-stone-900">
                                 HISTÓRICO DE EVENTOS PARTICIPADOS
@@ -506,13 +566,16 @@ export default function PerfilView() {
                                     size={36}
                                     className="mx-auto text-mare-laranja"
                                 />
+
                                 <p className="font-titulo mt-4 text-xl font-bold">
                                     Seu histórico aparecerá aqui
                                 </p>
+
                                 <p className="mx-auto mt-2 max-w-md text-sm text-stone-500">
                                     Quando suas participações em eventos estiverem registradas na
                                     plataforma, você poderá consultar todas por aqui.
                                 </p>
+
                                 <Link
                                     href="/explorar"
                                     className="mt-5 inline-block rounded-full bg-mare-laranja px-8 py-3 font-titulo font-bold text-white transition hover:brightness-95"
@@ -523,6 +586,7 @@ export default function PerfilView() {
                         </section>
 
                         {/* Eventos marcados: favoritos reais */}
+
                         <section>
                             <h2 className="font-titulo mb-5 text-3xl font-bold text-stone-900">
                                 EVENTOS MARCADOS
@@ -534,9 +598,11 @@ export default function PerfilView() {
                                         size={34}
                                         className="mx-auto text-mare-rosa"
                                     />
+
                                     <p className="font-titulo mt-3 text-lg font-bold">
                                         Você ainda não marcou eventos
                                     </p>
+
                                     <Link
                                         href="/explorar"
                                         className="mt-4 inline-block font-bold text-mare-laranja hover:underline"
@@ -575,7 +641,10 @@ export default function PerfilView() {
                                                 </p>
 
                                                 <p className="mt-1 text-xs text-stone-500">
-                                                    <IconePino size={12} className="mr-1 inline" />
+                                                    <IconePino
+                                                        size={12}
+                                                        className="mr-1 inline"
+                                                    />
                                                     {evento.local}, {evento.cidade}
                                                 </p>
                                             </div>
@@ -587,7 +656,9 @@ export default function PerfilView() {
                                             <button
                                                 type="button"
                                                 aria-label={`Remover ${evento.titulo} dos favoritos`}
-                                                onClick={() => alternarFavorito(evento.id)}
+                                                onClick={() =>
+                                                    alternarFavorito(evento.id)
+                                                }
                                                 className="grid size-10 shrink-0 place-items-center rounded-full border border-mare-rosa text-mare-rosa transition hover:bg-mare-rosa hover:text-white"
                                             >
                                                 <IconeCoracao size={18} ativo />
@@ -602,22 +673,34 @@ export default function PerfilView() {
             </div>
 
             {/* ===================== MOBILE ===================== */}
+
             <div className="lg:hidden">
                 {/* Cabeçalho */}
+
                 <header className="relative rounded-br-[5rem] bg-orange-600 px-6 pb-8 pt-6 text-white">
                     <div className="flex items-center justify-between">
-                        <Link href="/dashboard" className="flex items-center gap-2">
+                        <Link
+                            href="/dashboard"
+                            className="flex items-center gap-2"
+                        >
                             <span className="grid size-9 place-items-center rounded-xl bg-white text-lg font-extrabold text-orange-600">
                                 M
                             </span>
-                            <span className="font-titulo text-lg font-bold">Maré LN</span>
+
+                            <span className="font-titulo text-lg font-bold">
+                                Maré LN
+                            </span>
                         </Link>
 
                         <button
                             type="button"
-                            aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
+                            aria-label={
+                                menuAberto ? "Fechar menu" : "Abrir menu"
+                            }
                             aria-expanded={menuAberto}
-                            onClick={() => setMenuAberto((atual) => !atual)}
+                            onClick={() =>
+                                setMenuAberto((atual) => !atual)
+                            }
                             className="grid size-11 place-items-center rounded-full"
                         >
                             <svg
@@ -647,6 +730,7 @@ export default function PerfilView() {
                             >
                                 Início
                             </Link>
+
                             <Link
                                 href="/explorar"
                                 className="block rounded-xl px-4 py-3 text-sm hover:bg-stone-50"
@@ -677,7 +761,11 @@ export default function PerfilView() {
                             aria-label="Editar foto e perfil"
                             className="rounded-full"
                         >
-                            <Avatar foto={fotoUrl} nome={nome} tamanho="size-32" />
+                            <Avatar
+                                foto={fotoUrl}
+                                nome={nome}
+                                tamanho="size-32"
+                            />
                         </button>
 
                         <div className="min-w-0">
@@ -711,6 +799,7 @@ export default function PerfilView() {
                 </header>
 
                 {/* Banner mobile */}
+
                 {bannerVisivel && podeDivulgar && (
                     <section className="relative mt-6 flex items-center justify-between gap-3 bg-violet-600 px-5 py-4 text-white">
                         <p className="font-titulo text-base leading-tight">
@@ -726,6 +815,7 @@ export default function PerfilView() {
                         >
                             DIVULGAR
                         </button>
+
                         <Link
                             href="/meus-eventos"
                             className="shrink-0 rounded-full border border-white px-3 py-2 text-xs font-bold text-white"
@@ -746,6 +836,7 @@ export default function PerfilView() {
 
                 <div className="space-y-10 px-5 pb-8 pt-7">
                     {/* Preferências */}
+
                     <section>
                         <h2 className="font-titulo mb-5 text-2xl font-bold">
                             PREFERÊNCIAS
@@ -756,6 +847,7 @@ export default function PerfilView() {
                                 <span className="font-titulo text-lg font-bold text-mare-rosa">
                                     CIDADE
                                 </span>
+
                                 <span className="text-right font-titulo text-lg">
                                     {preferencias.cidade || "Não definida"}
                                 </span>
@@ -765,6 +857,7 @@ export default function PerfilView() {
                                 <span className="font-titulo text-lg font-bold text-mare-rosa">
                                     INTERESSES
                                 </span>
+
                                 <span className="max-w-[55%] truncate text-right font-titulo text-lg">
                                     {textoInteresses()}
                                 </span>
@@ -781,6 +874,7 @@ export default function PerfilView() {
                     </section>
 
                     {/* Histórico */}
+
                     <section>
                         <h2 className="font-titulo mb-5 text-2xl font-bold">
                             HISTÓRICO
@@ -791,13 +885,16 @@ export default function PerfilView() {
                                 size={32}
                                 className="mx-auto text-mare-laranja"
                             />
+
                             <p className="font-titulo mt-3 text-lg font-bold">
                                 Ainda não há participações
                             </p>
+
                             <p className="mt-2 text-sm text-stone-500">
                                 Seus eventos participados aparecerão aqui quando forem
                                 registrados na plataforma.
                             </p>
+
                             <Link
                                 href="/explorar"
                                 className="mt-4 inline-block rounded-full bg-mare-laranja px-7 py-2.5 font-titulo font-bold text-white"
@@ -808,6 +905,7 @@ export default function PerfilView() {
                     </section>
 
                     {/* Eventos marcados */}
+
                     <section>
                         <h2 className="font-titulo mb-5 text-2xl font-bold">
                             EVENTOS MARCADOS
@@ -818,6 +916,7 @@ export default function PerfilView() {
                                 <p className="font-titulo font-bold">
                                     Nenhum evento salvo ainda.
                                 </p>
+
                                 <Link
                                     href="/explorar"
                                     className="mt-3 inline-block font-bold text-mare-laranja"
@@ -846,12 +945,15 @@ export default function PerfilView() {
                                             <h3 className="font-titulo text-base font-bold leading-tight">
                                                 {evento.titulo}
                                             </h3>
+
                                             <p className="mt-1 text-xs text-stone-500">
                                                 {evento.data} • {evento.hora}
                                             </p>
+
                                             <p className="mt-1 text-xs text-stone-500">
                                                 {evento.local}, {evento.cidade}
                                             </p>
+
                                             <span className="mt-2 inline-block rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-700">
                                                 SALVO
                                             </span>
@@ -860,7 +962,9 @@ export default function PerfilView() {
                                         <button
                                             type="button"
                                             aria-label={`Remover ${evento.titulo} dos favoritos`}
-                                            onClick={() => alternarFavorito(evento.id)}
+                                            onClick={() =>
+                                                alternarFavorito(evento.id)
+                                            }
                                             className="grid size-11 shrink-0 place-items-center rounded-full border border-mare-rosa text-mare-rosa"
                                         >
                                             <IconeCoracao size={22} ativo />
@@ -872,8 +976,20 @@ export default function PerfilView() {
                     </section>
                 </div>
 
-                {/* Ações da conta */}
+                {/* Ações da conta mobile */}
+
                 <section className="space-y-4 bg-orange-600 px-6 py-8">
+                    {/* Acesso exclusivo do administrador */}
+
+                    {usuario?.tipo === "ADMIN" && (
+                        <Link
+                            href="/admin/eventos"
+                            className="block w-full rounded-xl border-2 border-white bg-violet-700 px-5 py-3 text-center font-titulo text-base font-bold text-white transition hover:bg-violet-800"
+                        >
+                            PAINEL ADMINISTRATIVO
+                        </Link>
+                    )}
+
                     <BotaoAcao onClick={abrirAvisoSenha}>
                         Alterar senha
                     </BotaoAcao>
@@ -885,36 +1001,59 @@ export default function PerfilView() {
                         Favoritos
                     </Link>
 
-                    <BotaoAcao onClick={sairDaConta} variante="vermelho">
+                    <BotaoAcao
+                        onClick={sairDaConta}
+                        variante="vermelho"
+                    >
                         Sair da conta
                     </BotaoAcao>
                 </section>
 
                 {/* Navegação inferior */}
+
                 <nav
                     aria-label="Navegação principal"
                     className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
                 >
                     <ul className="mx-auto flex max-w-xl items-stretch justify-around">
                         {[
-                            { href: "/dashboard", label: "Início", Icone: IconeInicio },
-                            { href: "/explorar", label: "Explorar", Icone: IconeBusca },
-                            { href: "/mapa", label: "Mapa", Icone: IconeSeta },
+                            {
+                                href: "/dashboard",
+                                label: "Início",
+                                Icone: IconeInicio,
+                            },
+                            {
+                                href: "/explorar",
+                                label: "Explorar",
+                                Icone: IconeBusca,
+                            },
+                            {
+                                href: "/mapa",
+                                label: "Mapa",
+                                Icone: IconeSeta,
+                            },
                             {
                                 href: "/dashboard#favoritos-mobile",
                                 label: "Favoritos",
                                 Icone: IconeCoracao,
                             },
-                            { href: "/perfil", label: "Perfil", Icone: IconeUsuario },
+                            {
+                                href: "/perfil",
+                                label: "Perfil",
+                                Icone: IconeUsuario,
+                            },
                         ].map(({ href, label, Icone }) => (
                             <li key={label} className="flex-1">
                                 <Link
                                     href={href}
-                                    aria-current={label === "Perfil" ? "page" : undefined}
-                                    className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${label === "Perfil"
-                                        ? "font-bold text-mare-laranja"
-                                        : "text-stone-400"
-                                        }`}
+                                    aria-current={
+                                        label === "Perfil" ? "page" : undefined
+                                    }
+                                    className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${
+                                        label === "Perfil"
+                                            ? "font-bold text-mare-laranja"
+                                            : "text-stone-400"
+                                    }`}
                                 >
                                     <Icone size={22} />
                                     {label}
@@ -926,6 +1065,7 @@ export default function PerfilView() {
             </div>
 
             {/* Modal de edição do perfil */}
+
             {editorAberto && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
                     <section
@@ -952,8 +1092,12 @@ export default function PerfilView() {
                             </button>
                         </div>
 
-                        <form onSubmit={salvarPerfil} className="mt-5 space-y-5">
+                        <form
+                            onSubmit={salvarPerfil}
+                            className="mt-5 space-y-5"
+                        >
                             {/* Foto */}
+
                             <div className="flex flex-col items-center gap-3">
                                 <Avatar
                                     foto={fotoNoEditor}
@@ -963,6 +1107,7 @@ export default function PerfilView() {
 
                                 <label className="cursor-pointer rounded-full border border-mare-laranja px-5 py-2 text-sm font-bold text-mare-laranja hover:bg-mare-laranja hover:text-white">
                                     Escolher foto
+
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -991,6 +1136,7 @@ export default function PerfilView() {
                             </div>
 
                             {/* Nome */}
+
                             <div>
                                 <label
                                     htmlFor="perfil-nome"
@@ -998,11 +1144,14 @@ export default function PerfilView() {
                                 >
                                     Nome
                                 </label>
+
                                 <input
                                     id="perfil-nome"
                                     type="text"
                                     value={nomeRascunho}
-                                    onChange={(event) => setNomeRascunho(event.target.value)}
+                                    onChange={(event) =>
+                                        setNomeRascunho(event.target.value)
+                                    }
                                     maxLength={60}
                                     required
                                     className="w-full rounded-xl border border-stone-300 px-4 py-3 outline-none focus:border-mare-laranja"
@@ -1010,6 +1159,7 @@ export default function PerfilView() {
                             </div>
 
                             {/* Cidade */}
+
                             <div>
                                 <label
                                     htmlFor="perfil-cidade"
@@ -1017,15 +1167,21 @@ export default function PerfilView() {
                                 >
                                     Cidade
                                 </label>
+
                                 <select
                                     id="perfil-cidade"
                                     value={cidadeRascunho}
                                     onChange={(event) =>
-                                        setCidadeRascunho(event.target.value as Cidade | "")
+                                        setCidadeRascunho(
+                                            event.target.value as Cidade | "",
+                                        )
                                     }
                                     className="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 outline-none focus:border-mare-laranja"
                                 >
-                                    <option value="">Selecione sua cidade</option>
+                                    <option value="">
+                                        Selecione sua cidade
+                                    </option>
+
                                     {cidades.map((cidade) => (
                                         <option key={cidade} value={cidade}>
                                             {cidade}
@@ -1035,6 +1191,7 @@ export default function PerfilView() {
                             </div>
 
                             {/* Interesses */}
+
                             <fieldset>
                                 <legend className="mb-3 text-sm font-bold text-stone-700">
                                     Interesses
@@ -1048,10 +1205,15 @@ export default function PerfilView() {
                                         >
                                             <input
                                                 type="checkbox"
-                                                checked={interessesRascunho.includes(categoria)}
-                                                onChange={() => alternarInteresse(categoria)}
+                                                checked={interessesRascunho.includes(
+                                                    categoria,
+                                                )}
+                                                onChange={() =>
+                                                    alternarInteresse(categoria)
+                                                }
                                                 className="accent-mare-laranja"
                                             />
+
                                             {nomesCategorias[categoria]}
                                         </label>
                                     ))}
@@ -1059,7 +1221,10 @@ export default function PerfilView() {
                             </fieldset>
 
                             {erro && (
-                                <p role="alert" className="text-sm font-semibold text-red-600">
+                                <p
+                                    role="alert"
+                                    className="text-sm font-semibold text-red-600"
+                                >
                                     {erro}
                                 </p>
                             )}
@@ -1079,7 +1244,9 @@ export default function PerfilView() {
                                     disabled={salvando}
                                     className="flex-1 rounded-xl bg-mare-laranja px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
                                 >
-                                    {salvando ? "Salvando..." : "Salvar alterações"}
+                                    {salvando
+                                        ? "Salvando..."
+                                        : "Salvar alterações"}
                                 </button>
                             </div>
                         </form>
@@ -1088,6 +1255,7 @@ export default function PerfilView() {
             )}
 
             {/* Avisos de recursos ainda não integrados */}
+
             {aviso && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
                     <section
