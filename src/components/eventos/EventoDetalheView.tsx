@@ -51,11 +51,17 @@ function normalizarTexto(valor: string) {
 export default function EventoDetalheView({ id }: Props) {
   const { usuario } = useSessao();
 
-  const { favoritos, alternarFavorito } = useFavoritos();
+  const {
+    favoritos,
+    alternarFavorito,
+  } = useFavoritos();
 
   const {
     eventosMarcados,
     alternarEventoMarcado,
+    carregandoEventosMarcados,
+    erroEventosMarcados,
+    atualizandoEventosMarcados,
   } = useEventosMarcados();
 
   const [evento, setEvento] = useState<EventoExplorar | null>(null);
@@ -104,6 +110,9 @@ export default function EventoDetalheView({ id }: Props) {
   const favorito = favoritos.includes(id);
   const marcado = eventosMarcados.includes(id);
 
+  const atualizandoMarcacao =
+    atualizandoEventosMarcados.includes(id);
+
   const localCompleto = evento
     ? evento.cidade &&
       normalizarTexto(evento.local) !==
@@ -145,6 +154,10 @@ export default function EventoDetalheView({ id }: Props) {
         "Não foi possível compartilhar o evento.",
       );
     }
+  }
+
+  async function marcarOuDesmarcarEvento() {
+    await alternarEventoMarcado(id);
   }
 
   return (
@@ -319,14 +332,25 @@ export default function EventoDetalheView({ id }: Props) {
                   <button
                     type="button"
                     aria-pressed={marcado}
-                    onClick={() => alternarEventoMarcado(id)}
-                    className={`mt-4 w-full rounded-full border-2 px-5 py-3 font-titulo text-lg font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mare-laranja ${
+                    disabled={
+                      !usuario?.id ||
+                      carregandoEventosMarcados ||
+                      atualizandoMarcacao
+                    }
+                    onClick={() => void marcarOuDesmarcarEvento()}
+                    className={`mt-4 w-full rounded-full border-2 px-5 py-3 font-titulo text-lg font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mare-laranja disabled:cursor-not-allowed disabled:opacity-60 ${
                       marcado
                         ? "border-emerald-600 bg-emerald-50 text-emerald-700"
                         : "border-mare-laranja bg-white text-mare-laranja hover:bg-mare-laranja hover:text-white"
                     }`}
                   >
-                    {marcado ? "Evento marcado ✓" : "Marcar evento"}
+                    {carregandoEventosMarcados
+                      ? "Carregando marcação..."
+                      : atualizandoMarcacao
+                        ? "Salvando..."
+                        : marcado
+                          ? "Evento marcado ✓"
+                          : "Marcar evento"}
                   </button>
 
                   <p className="mt-2 text-center text-[11px] leading-relaxed text-stone-500">
@@ -334,12 +358,27 @@ export default function EventoDetalheView({ id }: Props) {
                     confirma presença nem adiciona o evento ao histórico.
                   </p>
 
+                  {!usuario?.id && (
+                    <p className="mt-2 text-center text-xs text-amber-700">
+                      Entre na sua conta para marcar eventos.
+                    </p>
+                  )}
+
+                  {erroEventosMarcados && (
+                    <p
+                      role="alert"
+                      className="mt-2 text-center text-xs text-red-600"
+                    >
+                      {erroEventosMarcados}
+                    </p>
+                  )}
+
                   {marcado && (
                     <p
                       role="status"
                       className="mt-2 text-center text-xs font-semibold text-emerald-700"
                     >
-                      Sua intenção foi salva neste dispositivo.
+                      Evento salvo na sua conta.
                     </p>
                   )}
                 </section>

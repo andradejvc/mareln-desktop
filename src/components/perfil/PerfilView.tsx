@@ -31,6 +31,7 @@ import {
 } from "@/lib/usuario";
 
 import { useFavoritos } from "@/lib/favoritos";
+import { useEventosMarcados } from "@/lib/eventosMarcados";
 
 import {
     lerFotoPerfil,
@@ -188,12 +189,16 @@ export default function PerfilView() {
     const router = useRouter();
     const usuario = useUsuario();
 
+    // Favoritos permanecem independentes dos eventos marcados.
+    const { favoritos } = useFavoritos();
+
+    // Carrega e gerencia os eventos marcados pela API.
     const {
-        favoritos,
-        alternarFavorito,
-        carregandoFavoritos,
-        erroFavoritos,
-    } = useFavoritos();
+        eventosMarcados: idsEventosMarcados,
+        alternarEventoMarcado,
+        carregandoEventosMarcados: carregandoMarcacoes,
+        erroEventosMarcados: erroMarcacoes,
+    } = useEventosMarcados();
 
     const nome = usuario?.nome ?? "Usuário";
     const email = usuario?.email ?? "";
@@ -230,19 +235,19 @@ export default function PerfilView() {
     const [carregandoEventos, setCarregandoEventos] = useState(true);
     const [erroEventos, setErroEventos] = useState<string | null>(null);
 
-    // Cruza os IDs de favoritos com os eventos reais do PostgreSQL.
+    // Cruza os IDs dos eventos marcados com os eventos reais do PostgreSQL.
     const eventosMarcados = useMemo(
         () =>
             eventosApi.filter((evento) =>
-                favoritos.includes(evento.id),
+                idsEventosMarcados.includes(evento.id),
             ),
-        [eventosApi, favoritos],
+        [eventosApi, idsEventosMarcados],
     );
 
     const carregandoEventosMarcados =
-        carregandoEventos || carregandoFavoritos;
+        carregandoEventos || carregandoMarcacoes;
 
-    const erroEventosMarcados = erroEventos ?? erroFavoritos;
+    const erroEventosMarcados = erroEventos ?? erroMarcacoes;
 
     // Carrega os eventos aprovados diretamente do backend.
     useEffect(() => {
@@ -938,18 +943,18 @@ export default function PerfilView() {
                                             </div>
 
                                             <span className="hidden rounded-full bg-emerald-100 px-4 py-2 text-xs font-bold text-emerald-700 sm:inline">
-                                                SALVO
+                                                MARCADO
                                             </span>
 
                                             <button
                                                 type="button"
-                                                aria-label={`Remover ${evento.titulo} dos favoritos`}
+                                                aria-label={`Desmarcar ${evento.titulo} dos eventos marcados`}
                                                 onClick={() =>
-                                                    alternarFavorito(evento.id)
+                                                    void alternarEventoMarcado(evento.id)
                                                 }
-                                                className="grid size-10 shrink-0 place-items-center rounded-full border border-mare-rosa text-mare-rosa transition hover:bg-mare-rosa hover:text-white"
+                                                className="grid size-10 shrink-0 place-items-center rounded-full border border-emerald-600 text-emerald-700 transition hover:bg-emerald-600 hover:text-white"
                                             >
-                                                <IconeCoracao size={18} ativo />
+                                                <IconeCalendario size={18} />
                                             </button>
                                         </article>
                                     ))}
@@ -1225,17 +1230,17 @@ export default function PerfilView() {
                                                     : ""}
                                             </p>
                                             <span className="mt-2 inline-block rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-700">
-                                                SALVO
+                                                MARCADO
                                             </span>
                                         </div>
 
                                         <button
                                             type="button"
-                                            aria-label={`Remover ${evento.titulo} dos favoritos`}
-                                            onClick={() => alternarFavorito(evento.id)}
-                                            className="grid size-11 shrink-0 place-items-center rounded-full border border-mare-rosa text-mare-rosa"
+                                            aria-label={`Desmarcar ${evento.titulo} dos eventos marcados`}
+                                            onClick={() => void alternarEventoMarcado(evento.id)}
+                                            className="grid size-11 shrink-0 place-items-center rounded-full border border-emerald-600 text-emerald-700 transition hover:bg-emerald-600 hover:text-white"
                                         >
-                                            <IconeCoracao size={22} ativo />
+                                            <IconeCalendario size={22} />
                                         </button>
                                     </article>
                                 ))}
