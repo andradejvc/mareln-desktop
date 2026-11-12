@@ -7,6 +7,10 @@ export type PrecisaoLocalizacao = "EXATA" | "APROXIMADA";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "");
 
+// ======================================================
+// TIPOS DOS EVENTOS
+// ======================================================
+
 export type EventoBackend = {
     id: number;
     titulo: string;
@@ -46,9 +50,14 @@ export type EventoExplorar = {
     latitude: number | null;
     longitude: number | null;
     precisaoLocalizacao: PrecisaoLocalizacao | null;
+    imagemUrl: string | null;
     imagem: string;
     status: EventoBackend["status"];
 };
+
+// ======================================================
+// IMAGENS PADRÃO POR CATEGORIA
+// ======================================================
 
 const imagensPorCategoria: Record<string, string> = {
     Música: "/image/musical.jpg",
@@ -60,6 +69,10 @@ const imagensPorCategoria: Record<string, string> = {
 };
 
 const imagemPadrao = "/image/terceira-img.jpg";
+
+// ======================================================
+// NORMALIZAÇÃO DOS DADOS
+// ======================================================
 
 function normalizarTexto(valor: string) {
     return valor
@@ -127,7 +140,6 @@ function normalizarEvento(evento: EventoBackend): EventoExplorar {
             timeZone: "America/Sao_Paulo",
         }).format(dataEvento),
 
-        // Mantém a data original para comparações no Dashboard.
         dataISO: evento.data,
 
         hora: new Intl.DateTimeFormat("pt-BR", {
@@ -146,10 +158,32 @@ function normalizarEvento(evento: EventoBackend): EventoExplorar {
         longitude: evento.longitude,
         precisaoLocalizacao: evento.precisaoLocalizacao,
 
+        imagemUrl: evento.imagemUrl,
         imagem: obterImagemEvento(evento.imagemUrl, categoria),
+
         status: evento.status,
     };
 }
+
+// ======================================================
+// AUTENTICAÇÃO
+// ======================================================
+
+function obterHeadersAutenticados(): HeadersInit {
+    const token = lerAccessToken();
+
+    if (!token) {
+        throw new Error("Sua sessão expirou. Entre novamente.");
+    }
+
+    return {
+        Authorization: `Bearer ${token}`,
+    };
+}
+
+// ======================================================
+// LISTAGEM PÚBLICA
+// ======================================================
 
 export async function listarEventos(): Promise<EventoExplorar[]> {
     const resposta = await apiRequest<EventoBackend[]>("eventos", {
@@ -165,6 +199,10 @@ export async function listarEventos(): Promise<EventoExplorar[]> {
         .filter((evento) => evento.status === "APROVADO")
         .map(normalizarEvento);
 }
+
+// ======================================================
+// BUSCAR EVENTO POR ID
+// ======================================================
 
 export async function buscarEventoPorId(
     id: number,
@@ -188,10 +226,34 @@ export async function buscarEventoPorId(
     return normalizarEvento(evento);
 }
 
+// ======================================================
+// CATEGORIAS
+// ======================================================
+
 export type CategoriaBackend = {
     id: number;
     nome: string;
 };
+
+export async function listarCategorias(): Promise<CategoriaBackend[]> {
+    const resposta = await apiRequest<CategoriaBackend[]>(
+        "categorias",
+        {
+            method: "GET",
+            cache: "no-store",
+        },
+    );
+
+    if (!Array.isArray(resposta)) {
+        throw new Error("Não foi possível carregar as categorias.");
+    }
+
+    return resposta;
+}
+
+// ======================================================
+// CADASTRO DE EVENTOS
+// ======================================================
 
 export type NovoEvento = {
     titulo: string;
@@ -206,21 +268,26 @@ export type NovoEvento = {
     categoriaId?: number;
 };
 
+export async function criarEvento(
+    dados: NovoEvento,
+): Promise<EventoBackend> {
+    return apiRequest<EventoBackend>(
+        "eventos",
+        {
+            method: "POST",
+            headers: obterHeadersAutenticados(),
+            body: JSON.stringify(dados),
+        },
+    );
+}
+
+// ======================================================
+// UPLOAD DE IMAGENS
+// ======================================================
+
 export type ResultadoUploadImagem = {
     imagemUrl: string;
 };
-
-function obterHeadersAutenticados(): HeadersInit {
-    const token = lerAccessToken();
-
-    if (!token) {
-        throw new Error("Sua sessão expirou. Entre novamente.");
-    }
-
-    return {
-        Authorization: `Bearer ${token}`,
-    };
-}
 
 export async function enviarImagemEvento(
     arquivo: File,
@@ -244,6 +311,7 @@ export async function enviarImagemEvento(
     }
 
     const formulario = new FormData();
+
     formulario.append("imagem", arquivo);
 
     return apiUpload<ResultadoUploadImagem>(
@@ -252,34 +320,9 @@ export async function enviarImagemEvento(
     );
 }
 
-export async function listarCategorias(): Promise<CategoriaBackend[]> {
-    const resposta = await apiRequest<CategoriaBackend[]>(
-        "categorias",
-        {
-            method: "GET",
-            cache: "no-store",
-        },
-    );
-
-    if (!Array.isArray(resposta)) {
-        throw new Error("Não foi possível carregar as categorias.");
-    }
-
-    return resposta;
-}
-
-export async function criarEvento(
-    dados: NovoEvento,
-): Promise<EventoBackend> {
-    return apiRequest<EventoBackend>(
-        "eventos",
-        {
-            method: "POST",
-            headers: obterHeadersAutenticados(),
-            body: JSON.stringify(dados),
-        },
-    );
-}
+// ======================================================
+// MEUS EVENTOS
+// ======================================================
 
 export async function listarMeusEventos(): Promise<EventoExplorar[]> {
     const resposta = await apiRequest<EventoBackend[]>(
@@ -296,4 +339,59 @@ export async function listarMeusEventos(): Promise<EventoExplorar[]> {
     }
 
     return resposta.map(normalizarEvento);
+}
+
+// ======================================================
+// ATUALIZAÇÃO DE EVENTOS
+// ======================================================
+
+export type AtualizarEvento = {
+    titulo?: string;
+    descricao?: string;
+    data?: string;
+    local?: string;
+    cidade?: string;
+    latitude?: number;
+    longitude?: number;
+    precisaoLocalizacao?: PrecisaoLocalizacao;
+    imagemUrl?: string | null;
+    categoriaId?: number | null;
+};
+
+export async function atualizarEvento(
+    id: number,
+    dados: AtualizarEvento,
+): Promise<EventoBackend> {
+    if (!Number.isSafeInteger(id) || id <= 0) {
+        throw new Error("Identificador de evento inválido.");
+    }
+
+    return apiRequest<EventoBackend>(
+        `eventos/${id}`,
+        {
+            method: "PATCH",
+            headers: obterHeadersAutenticados(),
+            body: JSON.stringify(dados),
+        },
+    );
+}
+
+// ======================================================
+// EXCLUSÃO DE EVENTOS
+// ======================================================
+
+export async function excluirEvento(
+    id: number,
+): Promise<{ mensagem: string }> {
+    if (!Number.isSafeInteger(id) || id <= 0) {
+        throw new Error("Identificador de evento inválido.");
+    }
+
+    return apiRequest<{ mensagem: string }>(
+        `eventos/${id}`,
+        {
+            method: "DELETE",
+            headers: obterHeadersAutenticados(),
+        },
+    );
 }
