@@ -1,303 +1,379 @@
+
 import Image from "next/image";
 import Link from "next/link";
+
 import { cidades, type Cidade } from "@/data/eventos";
 import type { EventoDashboard } from "@/data/dashboard";
+
 import {
-  IconeBusca,
-  IconeCoracao,
-  IconeInicio,
-  IconeSeta,
-  IconeUsuario,
+    IconeBusca,
+    IconeCoracao,
+    IconeInicio,
+    IconeSeta,
+    IconeUsuario,
 } from "./icons";
+
 import {
-  BannerMapa,
-  BotaoFavorito,
-  Chip,
-  LinkDetalhesEvento,
+    BannerMapa,
+    BotaoFavorito,
+    Chip,
+    LinkDetalhesEvento,
 } from "./partes";
 
 type Props = {
-  nomeUsuario: string;
-  cidade: Cidade | null;
-  onCidade: (cidade: Cidade | null) => void;
-  favoritos: number[];
-  onFavorito: (id: number) => void;
-  hoje: EventoDashboard[];
-  sugestoes: EventoDashboard[];
-  meusFavoritos: EventoDashboard[];
-  proximos: EventoDashboard[];
+    nomeUsuario: string;
+    cidade: Cidade | null;
+    onCidade: (cidade: Cidade | null) => void;
+    favoritos: number[];
+    onFavorito: (id: number) => void;
+    hoje: EventoDashboard[];
+    sugestoes: EventoDashboard[];
+    meusFavoritos: EventoDashboard[];
+    proximos: EventoDashboard[];
+    carregando: boolean;
+    erro: string | null;
 };
 
 const abas = [
-  { href: "/dashboard", label: "Início", Icone: IconeInicio, ativo: true },
-  { href: "/explorar", label: "Explorar", Icone: IconeBusca },
-  { href: "/mapa", label: "Mapa", Icone: IconeSeta },
-  { href: "/favoritos", label: "Favoritos", Icone: IconeCoracao },
-  { href: "/perfil", label: "Perfil", Icone: IconeUsuario },
+    { href: "/dashboard", label: "Início", Icone: IconeInicio, ativo: true },
+    { href: "/explorar", label: "Explorar", Icone: IconeBusca },
+    { href: "/mapa", label: "Mapa", Icone: IconeSeta },
+    { href: "/favoritos", label: "Favoritos", Icone: IconeCoracao },
+    { href: "/perfil", label: "Perfil", Icone: IconeUsuario },
 ];
 
 const faixa =
-  "flex snap-x gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
+    "flex snap-x gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
 function TituloSecao({
-  titulo,
-  acao,
+    titulo,
+    acao,
 }: {
-  titulo: string;
-  acao?: { href: string; label: string };
+    titulo: string;
+    acao?: { href: string; label: string };
 }) {
-  return (
-    <div className="mb-3 flex items-center justify-between px-5">
-      <h2 className="font-titulo text-2xl">{titulo}</h2>
-      {acao && (
-        <Link href={acao.href} className="text-sm font-bold text-mare-rosa">
-          {acao.label}
-        </Link>
-      )}
-    </div>
-  );
+    return (
+        <div className="mb-3 flex items-center justify-between px-5">
+            <h2 className="font-titulo text-2xl">{titulo}</h2>
+
+            {acao && (
+                <Link
+                    href={acao.href}
+                    className="text-sm font-bold text-mare-rosa"
+                >
+                    {acao.label}
+                </Link>
+            )}
+        </div>
+    );
 }
 
 function CardMobile({
-  evento,
-  favorito,
-  onFavorito,
-  compacto = false,
+    evento,
+    favorito,
+    onFavorito,
+    compacto = false,
 }: {
-  evento: EventoDashboard;
-  favorito: boolean;
-  onFavorito: (id: number) => void;
-  compacto?: boolean;
+    evento: EventoDashboard;
+    favorito: boolean;
+    onFavorito: (id: number) => void;
+    compacto?: boolean;
 }) {
-  return (
-    <article
-      className={`cartao-evento relative overflow-hidden rounded-2xl bg-white shadow-sm shadow-orange-900/10 ${
-        compacto ? "w-56 shrink-0 snap-start" : "w-full"
-      }`}
-    >
-      <div className={`relative ${compacto ? "h-28" : "h-36"}`}>
-        <Image
-          src={evento.imagem}
-          alt=""
-          fill
-          sizes={compacto ? "224px" : "(min-width: 640px) 576px, 100vw"}
-          className="object-cover"
-        />
-
-        {evento.hoje && (
-          <span className="absolute left-2.5 top-2.5 rounded-md bg-mare-rosa px-2 py-0.5 text-[11px] font-bold text-white">
-            HOJE
-          </span>
-        )}
-
-        <BotaoFavorito
-          evento={evento}
-          ativo={favorito}
-          onAlternar={onFavorito}
-          className="absolute right-2.5 top-2.5"
-        />
-      </div>
-
-      <div className="space-y-1.5 p-3.5">
-        <h3
-          className={`font-bold leading-snug ${
-            compacto ? "truncate text-sm" : "text-lg"
-          }`}
+    return (
+        <article
+            className={`cartao-evento relative overflow-hidden rounded-2xl bg-white shadow-sm shadow-orange-900/10 ${
+                compacto ? "w-56 shrink-0 snap-start" : "w-full"
+            }`}
         >
-          {evento.titulo}
-        </h3>
-        <Chip categoria={evento.categoria} mobile />
-        <p className="text-xs text-stone-500">
-          {evento.data} • {evento.hora}
-        </p>
-        <p className={`text-xs text-stone-500 ${compacto ? "truncate" : ""}`}>
-          {evento.local}, {evento.cidade}
-        </p>
-      </div>
+            <div className={`relative ${compacto ? "h-28" : "h-36"}`}>
+                <Image
+                    src={evento.imagem}
+                    alt={evento.titulo}
+                    fill
+                    sizes={
+                        compacto
+                            ? "224px"
+                            : "(min-width: 640px) 576px, 100vw"
+                    }
+                    className="object-cover"
+                />
 
-      <LinkDetalhesEvento evento={evento} />
-    </article>
-  );
+                {evento.hoje && (
+                    <span className="absolute left-2.5 top-2.5 rounded-md bg-mare-rosa px-2 py-0.5 text-[11px] font-bold text-white">
+                        HOJE
+                    </span>
+                )}
+
+                <BotaoFavorito
+                    evento={evento}
+                    ativo={favorito}
+                    onAlternar={onFavorito}
+                    className="absolute right-2.5 top-2.5"
+                />
+            </div>
+
+            <div className="space-y-1.5 p-3.5">
+                <h3
+                    className={`font-bold leading-snug ${
+                        compacto ? "truncate text-sm" : "text-lg"
+                    }`}
+                >
+                    {evento.titulo}
+                </h3>
+
+                <Chip categoria={evento.categoria} mobile />
+
+                <p className="text-xs text-stone-500">
+                    {evento.data} • {evento.hora}
+                </p>
+
+                <p
+                    className={`text-xs text-stone-500 ${
+                        compacto ? "truncate" : ""
+                    }`}
+                >
+                    {evento.local},{" "}
+                    {evento.cidade ?? "Cidade não informada"}
+                </p>
+            </div>
+
+            <LinkDetalhesEvento evento={evento} />
+        </article>
+    );
 }
 
 export default function DashboardMobile({
-  nomeUsuario,
-  cidade,
-  onCidade,
-  favoritos,
-  onFavorito,
-  hoje,
-  sugestoes,
-  meusFavoritos,
-  proximos,
+    nomeUsuario,
+    cidade,
+    onCidade,
+    favoritos,
+    onFavorito,
+    hoje,
+    sugestoes,
+    meusFavoritos,
+    proximos,
+    carregando,
+    erro,
 }: Props) {
-  return (
-    <div className="mx-auto w-full max-w-xl pb-28">
-      <header className="rounded-b-[2rem] bg-mare-laranja px-5 pb-6 pt-8 text-white">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-white/80">
-            Bem-vindo de volta
-          </p>
-          <h1 className="mt-1 text-3xl font-bold">
-            Oi, {nomeUsuario}! <span aria-hidden="true">👋</span>
-          </h1>
-          <p className="mt-1 text-sm text-white/90">
-            O que vamos descobrir hoje?
-          </p>
-        </div>
+    return (
+        <div className="mx-auto w-full max-w-xl pb-28">
+            <header className="rounded-b-[2rem] bg-mare-laranja px-5 pb-6 pt-8 text-white">
+                <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-white/80">
+                        Bem-vindo de volta
+                    </p>
 
-        <label className="mt-5 flex items-center gap-2.5 rounded-full bg-white px-4 py-3 text-stone-400 shadow-sm">
-          <IconeBusca size={18} />
-          <span className="sr-only">Buscar eventos</span>
-          <input
-            type="search"
-            placeholder="Buscar eventos..."
-            className="w-full bg-transparent text-sm text-stone-800 outline-none placeholder:text-stone-400"
-          />
-        </label>
-      </header>
+                    <h1 className="mt-1 text-3xl font-bold">
+                        Oi, {nomeUsuario}!{" "}
+                        <span aria-hidden="true">👋</span>
+                    </h1>
 
-      <div
-        role="group"
-        aria-label="Filtrar por cidade"
-        className="flex gap-2 overflow-x-auto px-5 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {cidades.map((c) => {
-          const ativa = cidade === c;
-          return (
-            <button
-              key={c}
-              type="button"
-              aria-pressed={ativa}
-              onClick={() => onCidade(ativa ? null : c)}
-              className={`shrink-0 rounded-full border-2 border-mare-laranja px-4 py-1.5 text-sm font-bold ${
-                ativa
-                  ? "bg-mare-laranja text-white"
-                  : "bg-white text-mare-laranja"
-              }`}
-            >
-              {c}
-            </button>
-          );
-        })}
-      </div>
+                    <p className="mt-1 text-sm text-white/90">
+                        O que vamos descobrir hoje?
+                    </p>
+                </div>
 
-      <div className="space-y-8">
-        {hoje.length > 0 && (
-          <section aria-label="Acontecendo hoje">
-            <TituloSecao
-              titulo="Acontecendo hoje"
-              acao={{ href: "/explorar", label: "Ver tudo →" }}
-            />
-            <div className={faixa}>
-              {hoje.map((e) => (
-                <CardMobile
-                  key={e.id}
-                  evento={e}
-                  compacto
-                  favorito={favoritos.includes(e.id)}
-                  onFavorito={onFavorito}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+                <label className="mt-5 flex items-center gap-2.5 rounded-full bg-white px-4 py-3 text-stone-400 shadow-sm">
+                    <IconeBusca size={18} />
 
-        <section aria-label="Pode te interessar">
-          <TituloSecao titulo="Pode te interessar" />
-          <div className="space-y-3 px-5">
-            {sugestoes.slice(0, 2).map((e) => (
-              <CardMobile
-                key={e.id}
-                evento={e}
-                favorito={favoritos.includes(e.id)}
-                onFavorito={onFavorito}
-              />
-            ))}
-          </div>
-        </section>
+                    <span className="sr-only">Buscar eventos</span>
 
-        <section
-          id="favoritos-mobile"
-          aria-label="Meus favoritos"
-          className="scroll-mt-4"
-        >
-          <TituloSecao
-            titulo="Meus favoritos"
-            acao={{ href: "/favoritos", label: "Ver todos →" }}
-          />
+                    <input
+                        type="search"
+                        placeholder="Buscar eventos..."
+                        className="w-full bg-transparent text-sm text-stone-800 outline-none placeholder:text-stone-400"
+                    />
+                </label>
+            </header>
 
-          {meusFavoritos.length === 0 ? (
-            <p className="px-5 text-sm text-stone-500">
-              Toque no coração de um evento para guardá-lo aqui.
-            </p>
-          ) : (
-            <div className={faixa}>
-              {meusFavoritos.map((e) => (
-                <CardMobile
-                  key={e.id}
-                  evento={e}
-                  compacto
-                  favorito
-                  onFavorito={onFavorito}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section aria-label="Próximos eventos">
-          <TituloSecao titulo="Próximos eventos" />
-          <div className="space-y-3 px-5">
-            {proximos.length === 0 ? (
-              <p className="rounded-2xl bg-white p-6 text-center text-sm text-stone-500">
-                Nenhum evento próximo nessa cidade por enquanto.
-              </p>
-            ) : (
-              proximos.slice(0, 3).map((e) => (
-                <CardMobile
-                  key={e.id}
-                  evento={e}
-                  favorito={favoritos.includes(e.id)}
-                  onFavorito={onFavorito}
-                />
-              ))
+            {erro && (
+                <p
+                    role="alert"
+                    className="mx-5 mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                >
+                    {erro}
+                </p>
             )}
-          </div>
-        </section>
 
-        <div className="space-y-4 px-5">
-          <Link
-            href="/explorar"
-            className="block rounded-2xl bg-mare-laranja py-4 text-center font-titulo text-xl text-white shadow-sm"
-          >
-            Ver todos os eventos →
-          </Link>
-          <BannerMapa linha className="h-24" />
+            <div
+                role="group"
+                aria-label="Filtrar por cidade"
+                className="flex gap-2 overflow-x-auto px-5 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+                {cidades.map((c) => {
+                    const ativa = cidade === c;
+
+                    return (
+                        <button
+                            key={c}
+                            type="button"
+                            aria-pressed={ativa}
+                            onClick={() => onCidade(ativa ? null : c)}
+                            className={`shrink-0 rounded-full border-2 border-mare-laranja px-4 py-1.5 text-sm font-bold ${
+                                ativa
+                                    ? "bg-mare-laranja text-white"
+                                    : "bg-white text-mare-laranja"
+                            }`}
+                        >
+                            {c}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {carregando && (
+                <p
+                    role="status"
+                    className="mx-5 mb-4 rounded-xl bg-white p-4 text-sm text-stone-500"
+                >
+                    Carregando eventos...
+                </p>
+            )}
+
+            <div className="space-y-8">
+                <section aria-label="Acontecendo hoje">
+                    <TituloSecao
+                        titulo="Acontecendo hoje"
+                        acao={{ href: "/explorar", label: "Ver tudo →" }}
+                    />
+
+                    {hoje.length > 0 ? (
+                        <div className={faixa}>
+                            {hoje.map((evento) => (
+                                <CardMobile
+                                    key={evento.id}
+                                    evento={evento}
+                                    compacto
+                                    favorito={favoritos.includes(evento.id)}
+                                    onFavorito={onFavorito}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        !carregando &&
+                        !erro && (
+                            <p className="px-5 text-sm text-stone-500">
+                                Nenhum evento acontecendo hoje nessa cidade.
+                            </p>
+                        )
+                    )}
+                </section>
+
+                <section aria-label="Pode te interessar">
+                    <TituloSecao titulo="Pode te interessar" />
+
+                    {sugestoes.length > 0 ? (
+                        <div className="space-y-3 px-5">
+                            {sugestoes.slice(0, 2).map((evento) => (
+                                <CardMobile
+                                    key={evento.id}
+                                    evento={evento}
+                                    favorito={favoritos.includes(evento.id)}
+                                    onFavorito={onFavorito}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        !carregando &&
+                        !erro && (
+                            <p className="px-5 text-sm text-stone-500">
+                                Ainda não temos sugestões de eventos futuros.
+                            </p>
+                        )
+                    )}
+                </section>
+
+                <section
+                    id="favoritos-mobile"
+                    aria-label="Meus favoritos"
+                    className="scroll-mt-4"
+                >
+                    <TituloSecao
+                        titulo="Meus favoritos"
+                        acao={{
+                            href: "/favoritos",
+                            label: "Ver todos →",
+                        }}
+                    />
+
+                    {meusFavoritos.length === 0 ? (
+                        <p className="px-5 text-sm text-stone-500">
+                            Toque no coração de um evento para guardá-lo aqui.
+                        </p>
+                    ) : (
+                        <div className={faixa}>
+                            {meusFavoritos.map((evento) => (
+                                <CardMobile
+                                    key={evento.id}
+                                    evento={evento}
+                                    compacto
+                                    favorito
+                                    onFavorito={onFavorito}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                <section aria-label="Próximos eventos">
+                    <TituloSecao titulo="Próximos eventos" />
+
+                    <div className="space-y-3 px-5">
+                        {proximos.length === 0 ? (
+                            !carregando &&
+                            !erro && (
+                                <p className="rounded-2xl bg-white p-6 text-center text-sm text-stone-500">
+                                    Nenhum evento futuro nessa cidade por enquanto.
+                                </p>
+                            )
+                        ) : (
+                            proximos.slice(0, 3).map((evento) => (
+                                <CardMobile
+                                    key={evento.id}
+                                    evento={evento}
+                                    favorito={favoritos.includes(evento.id)}
+                                    onFavorito={onFavorito}
+                                />
+                            ))
+                        )}
+                    </div>
+                </section>
+
+                <div className="space-y-4 px-5">
+                    <Link
+                        href="/explorar"
+                        className="block rounded-2xl bg-mare-laranja py-4 text-center font-titulo text-xl text-white shadow-sm"
+                    >
+                        Ver todos os eventos →
+                    </Link>
+
+                    <BannerMapa linha className="h-24" />
+                </div>
+            </div>
+
+            <nav
+                aria-label="Principal"
+                className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
+            >
+                <ul className="mx-auto flex max-w-xl items-stretch justify-around">
+                    {abas.map(({ href, label, Icone, ativo }) => (
+                        <li key={label} className="flex-1">
+                            <Link
+                                href={href}
+                                aria-current={ativo ? "page" : undefined}
+                                className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${
+                                    ativo
+                                        ? "font-bold text-mare-laranja"
+                                        : "text-stone-400"
+                                }`}
+                            >
+                                <Icone size={22} />
+                                {label}
+                            </Link>
+                        </li>
+                    ))}
+                </ul>
+            </nav>
         </div>
-      </div>
-
-      <nav
-        aria-label="Principal"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
-      >
-        <ul className="mx-auto flex max-w-xl items-stretch justify-around">
-          {abas.map(({ href, label, Icone, ativo }) => (
-            <li key={label} className="flex-1">
-              <Link
-                href={href}
-                aria-current={ativo ? "page" : undefined}
-                className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${
-                  ativo ? "font-bold text-mare-laranja" : "text-stone-400"
-                }`}
-              >
-                <Icone size={22} />
-                {label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </div>
-  );
+    );
 }

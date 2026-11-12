@@ -39,6 +39,7 @@ export type EventoExplorar = {
     descricao: string;
     categoria: string;
     data: string;
+    dataISO: string;
     hora: string;
     local: string;
     cidade: Cidade | null;
@@ -125,6 +126,9 @@ function normalizarEvento(evento: EventoBackend): EventoExplorar {
             month: "short",
             timeZone: "America/Sao_Paulo",
         }).format(dataEvento),
+
+        // Mantém a data original para comparações no Dashboard.
+        dataISO: evento.data,
 
         hora: new Intl.DateTimeFormat("pt-BR", {
             hour: "2-digit",
@@ -240,7 +244,6 @@ export async function enviarImagemEvento(
     }
 
     const formulario = new FormData();
-
     formulario.append("imagem", arquivo);
 
     return apiUpload<ResultadoUploadImagem>(
