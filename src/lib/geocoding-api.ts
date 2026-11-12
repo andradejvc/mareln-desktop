@@ -231,7 +231,11 @@ export async function buscarLocalizacoes(
         );
     }
 
-    const consulta = `${localLimpo}, ${cidade}, São Paulo, Brasil`;
+    const consultaLocal = /^praca\b/.test(normalizarTexto(localLimpo))
+        ? obterTermosSignificativos(localLimpo).join(" ")
+        : localLimpo;
+
+    const consulta = `${consultaLocal}, ${cidade}, São Paulo, Brasil`;
 
     const parametros = new URLSearchParams({
         key: apiKey,
