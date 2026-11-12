@@ -1,3 +1,4 @@
+
 "use client";
 
 import dynamic from "next/dynamic";
@@ -9,16 +10,21 @@ import { useEffect, useMemo, useState } from "react";
 import {
     categorias,
     cidades,
-    eventos,
     type Categoria,
     type Cidade,
 } from "@/data/eventos";
-import { coordenadasEventos } from "@/data/coordenadasEventos";
+
+import {
+    listarEventos,
+    type EventoExplorar,
+} from "@/lib/eventos-api";
+
 import { useFavoritos } from "@/lib/favoritos";
 import { useSessao } from "@/lib/usuario";
+
 import CabecalhoMobile from "@/components/explorar/CabecalhoMobile";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
-import { BotaoFavorito } from "@/components/dashboard/partes";
+
 import {
     IconeBusca,
     IconeCalendario,
@@ -28,14 +34,19 @@ import {
     IconeUsuario,
 } from "@/components/dashboard/icons";
 
-type EventoComCoordenada = (typeof eventos)[number] & {
+type EventoComCoordenada = Omit<
+    EventoExplorar,
+    "latitude" | "longitude"
+> & {
     latitude: number;
     longitude: number;
     precisao: "referencia" | "aproximada";
-    observacao?: string;
 };
 
-type LocalizacaoUsuario = { latitude: number; longitude: number };
+type LocalizacaoUsuario = {
+    latitude: number;
+    longitude: number;
+};
 
 const MapaLeaflet = dynamic(() => import("./MapaLeaflet"), {
     ssr: false,
@@ -70,45 +81,126 @@ export default function MapaView({
     const { usuario, pronta } = useSessao();
     const { favoritos, alternarFavorito } = useFavoritos();
 
-    const sessao = !pronta ? "carregando" : usuario ? "logado" : "visitante";
+    const sessao = !pronta
+        ? "carregando"
+        : usuario
+            ? "logado"
+            : "visitante";
+
+    const [eventosApi, setEventosApi] = useState<EventoExplorar[]>([]);
+    const [carregandoEventos, setCarregandoEventos] = useState(true);
+    const [erroEventos, setErroEventos] = useState<string | null>(null);
+
     const [busca, setBusca] = useState("");
     const [cidade, setCidade] = useState<Cidade | "todas">("todas");
     const [categoria, setCategoria] = useState<Categoria | "todas">("todas");
     const [filtrosAbertos, setFiltrosAbertos] = useState(false);
+
     const [eventoSelecionadoId, setEventoSelecionadoId] = useState<
         number | null
     >(eventoInicialId);
+
     const [localizacaoUsuario, setLocalizacaoUsuario] =
         useState<LocalizacaoUsuario | null>(null);
+
     const [statusLocalizacao, setStatusLocalizacao] = useState("");
     const [buscandoLocalizacao, setBuscandoLocalizacao] = useState(false);
 
+    // Busca somente os eventos aprovados disponibilizados pela API.
+    useEffect(() => {
+        let ativo = true;
+
+        async function carregarEventos() {
+            try {
+                const resposta = await listarEventos();
+
+                if (ativo) {
+                    setEventosApi(resposta);
+                    setErroEventos(null);
+                }
+            } catch (erro) {
+                if (ativo) {
+                    setErroEventos(
+                        erro instanceof Error
+                            ? erro.message
+                            : "Não foi possível carregar os eventos.",
+                    );
+                }
+            } finally {
+                if (ativo) {
+                    setCarregandoEventos(false);
+                }
+            }
+        }
+
+        void carregarEventos();
+
+        return () => {
+            ativo = false;
+        };
+    }, []);
+
+    // O mapa exibe somente eventos que possuem coordenadas válidas.
     const eventosComCoordenadas = useMemo<EventoComCoordenada[]>(
         () =>
-            eventos.flatMap((evento) => {
-                const coordenada = coordenadasEventos[evento.id];
-                if (!coordenada) return [];
-                return [{ ...evento, ...coordenada }];
+            eventosApi.flatMap((evento) => {
+                const latitude = evento.latitude;
+                const longitude = evento.longitude;
+
+                if (
+                    latitude === null ||
+                    longitude === null ||
+                    !Number.isFinite(latitude) ||
+                    !Number.isFinite(longitude)
+                ) {
+                    return [];
+                }
+
+                return [
+                    {
+                        ...evento,
+                        latitude,
+                        longitude,
+                        precisao:
+                            evento.precisaoLocalizacao === "EXATA"
+                                ? "referencia"
+                                : "aproximada",
+                    },
+                ];
             }),
-        [],
+        [eventosApi],
     );
 
     const eventosFiltrados = useMemo(() => {
         const termo = normalizar(busca.trim());
+
         return eventosComCoordenadas.filter((evento) => {
-            if (cidade !== "todas" && evento.cidade !== cidade) return false;
-            if (categoria !== "todas" && evento.categoria !== categoria)
+            if (
+                cidade !== "todas" &&
+                evento.cidade !== cidade
+            ) {
                 return false;
+            }
+
+            if (
+                categoria !== "todas" &&
+                evento.categoria !== categoria
+            ) {
+                return false;
+            }
+
             if (!termo) return true;
+
             return [
                 evento.titulo,
                 evento.local,
-                evento.cidade,
+                evento.cidade ?? "",
                 evento.categoria,
             ].some((campo) => normalizar(campo).includes(termo));
         });
     }, [eventosComCoordenadas, busca, cidade, categoria]);
 
+    // Mantém um evento selecionado válido depois da aplicação dos filtros.
     useEffect(() => {
         if (eventoInicialId !== null) {
             const eventoEncontrado = eventosFiltrados.find(
@@ -130,25 +222,33 @@ export default function MapaView({
     }, [eventoInicialId, eventosFiltrados]);
 
     const eventoSelecionado =
-        eventosFiltrados.find((evento) => evento.id === eventoSelecionadoId) ??
-        null;
+        eventosFiltrados.find(
+            (evento) => evento.id === eventoSelecionadoId,
+        ) ?? null;
 
     function favoritar(id: number) {
         if (sessao === "visitante") {
             router.push(`/login?returnTo=${encodeURIComponent("/mapa")}`);
             return;
         }
-        if (sessao === "logado") alternarFavorito(id);
+
+        if (sessao === "logado") {
+            alternarFavorito(id);
+        }
     }
 
     function solicitarLocalizacao() {
         if (!navigator.geolocation) {
-            setStatusLocalizacao("Este navegador não oferece geolocalização.");
+            setStatusLocalizacao(
+                "Este navegador não oferece geolocalização.",
+            );
             return;
         }
 
         setBuscandoLocalizacao(true);
-        setStatusLocalizacao("Aguardando autorização de localização...");
+        setStatusLocalizacao(
+            "Aguardando autorização de localização...",
+        );
 
         navigator.geolocation.getCurrentPosition(
             (posicao) => {
@@ -156,7 +256,11 @@ export default function MapaView({
                     latitude: posicao.coords.latitude,
                     longitude: posicao.coords.longitude,
                 });
-                setStatusLocalizacao("Sua localização foi exibida no mapa.");
+
+                setStatusLocalizacao(
+                    "Sua localização foi exibida no mapa.",
+                );
+
                 setBuscandoLocalizacao(false);
             },
             (erro) => {
@@ -164,12 +268,17 @@ export default function MapaView({
                     erro.code === erro.PERMISSION_DENIED
                         ? "Acesso à localização não autorizado. Você pode permitir nas configurações do navegador."
                         : erro.code === erro.POSITION_UNAVAILABLE
-                          ? "Não foi possível determinar sua localização agora."
-                          : "A localização demorou demais para responder. Tente novamente.";
+                            ? "Não foi possível determinar sua localização agora."
+                            : "A localização demorou demais para responder. Tente novamente.";
+
                 setStatusLocalizacao(mensagem);
                 setBuscandoLocalizacao(false);
             },
-            { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 },
+            {
+                enableHighAccuracy: true,
+                timeout: 12000,
+                maximumAge: 60000,
+            },
         );
     }
 
@@ -180,19 +289,25 @@ export default function MapaView({
     }
 
     const quantidadeFiltrosAtivos =
-        (cidade !== "todas" ? 1 : 0) + (categoria !== "todas" ? 1 : 0);
+        (cidade !== "todas" ? 1 : 0) +
+        (categoria !== "todas" ? 1 : 0);
 
     return (
         <div className="mx-auto w-full max-w-xl pb-24 lg:max-w-7xl lg:px-6 lg:py-5">
             <div className="lg:hidden">
-                <CabecalhoMobile sessao={sessao} paginaAtiva="Mapa" />
+                <CabecalhoMobile
+                    sessao={sessao}
+                    paginaAtiva="Mapa"
+                />
             </div>
 
             <div className="hidden lg:block">
                 <DashboardNavbar
                     sessao={sessao}
                     nomeUsuario={usuario?.nome}
-                    totalFavoritos={sessao === "logado" ? favoritos.length : 0}
+                    totalFavoritos={
+                        sessao === "logado" ? favoritos.length : 0
+                    }
                     paginaAtiva="Mapa"
                 />
             </div>
@@ -202,6 +317,7 @@ export default function MapaView({
                     <h1 className="font-titulo text-2xl uppercase tracking-wide text-mare-rosa sm:text-3xl">
                         Mapa de eventos
                     </h1>
+
                     <p className="mt-1 text-sm text-stone-500">
                         Explore eventos pelo Litoral Norte de São Paulo.
                     </p>
@@ -210,11 +326,17 @@ export default function MapaView({
                 <div className="relative z-30 mb-4 flex items-center gap-2">
                     <label className="flex min-w-0 flex-1 items-center gap-2.5 rounded-full border border-stone-200 bg-white px-4 py-3 text-stone-400 shadow-sm focus-within:border-mare-laranja">
                         <IconeBusca size={17} />
-                        <span className="sr-only">Buscar eventos no mapa</span>
+
+                        <span className="sr-only">
+                            Buscar eventos no mapa
+                        </span>
+
                         <input
                             type="search"
                             value={busca}
-                            onChange={(evento) => setBusca(evento.target.value)}
+                            onChange={(evento) =>
+                                setBusca(evento.target.value)
+                            }
                             placeholder="Buscar eventos..."
                             className="w-full min-w-0 bg-transparent text-sm text-stone-800 outline-none placeholder:text-stone-400"
                         />
@@ -224,12 +346,13 @@ export default function MapaView({
                         type="button"
                         aria-label="Abrir filtros"
                         aria-expanded={filtrosAbertos}
-                        onClick={() => setFiltrosAbertos((aberto) => !aberto)}
-                        className={`relative grid size-12 shrink-0 place-items-center rounded-full bg-white text-mare-rosa shadow-sm transition hover:bg-rose-50 ${
-                            filtrosAbertos || quantidadeFiltrosAtivos > 0
-                                ? "ring-2 ring-mare-rosa/30"
-                                : ""
-                        }`}
+                        onClick={() =>
+                            setFiltrosAbertos((aberto) => !aberto)
+                        }
+                        className={`relative grid size-12 shrink-0 place-items-center rounded-full bg-white text-mare-rosa shadow-sm transition hover:bg-rose-50 ${filtrosAbertos || quantidadeFiltrosAtivos > 0
+                            ? "ring-2 ring-mare-rosa/30"
+                            : ""
+                            }`}
                     >
                         <svg
                             width="21"
@@ -246,6 +369,7 @@ export default function MapaView({
                             <circle cx="10" cy="12" r="2" />
                             <circle cx="18" cy="18" r="2" />
                         </svg>
+
                         {quantidadeFiltrosAtivos > 0 && (
                             <span className="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-mare-rosa text-[9px] font-bold text-white">
                                 {quantidadeFiltrosAtivos}
@@ -259,6 +383,7 @@ export default function MapaView({
                                 <h2 className="font-bold text-stone-800">
                                     Filtrar eventos
                                 </h2>
+
                                 <button
                                     type="button"
                                     onClick={() => setFiltrosAbertos(false)}
@@ -267,15 +392,17 @@ export default function MapaView({
                                     Fechar
                                 </button>
                             </div>
+
                             <label className="block text-xs font-semibold text-stone-600">
                                 Cidade
+
                                 <select
                                     value={cidade}
                                     onChange={(evento) =>
                                         setCidade(
                                             evento.target.value as
-                                                | Cidade
-                                                | "todas",
+                                            | Cidade
+                                            | "todas",
                                         )
                                     }
                                     className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm font-normal text-stone-800 outline-none focus:border-mare-laranja"
@@ -283,6 +410,7 @@ export default function MapaView({
                                     <option value="todas">
                                         Todas as cidades
                                     </option>
+
                                     {cidades.map((nome) => (
                                         <option key={nome} value={nome}>
                                             {nome}
@@ -295,15 +423,20 @@ export default function MapaView({
                                 <p className="mb-2 text-xs font-semibold text-stone-600">
                                     Categoria
                                 </p>
+
                                 <div className="flex flex-wrap gap-2">
                                     <button
                                         type="button"
                                         aria-pressed={categoria === "todas"}
                                         onClick={() => setCategoria("todas")}
-                                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${categoria === "todas" ? "border-mare-rosa bg-mare-rosa text-white" : "border-stone-200 text-stone-600"}`}
+                                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${categoria === "todas"
+                                            ? "border-mare-rosa bg-mare-rosa text-white"
+                                            : "border-stone-200 text-stone-600"
+                                            }`}
                                     >
                                         Todas
                                     </button>
+
                                     {categorias.map((nome) => (
                                         <button
                                             key={nome}
@@ -316,7 +449,10 @@ export default function MapaView({
                                                         : nome,
                                                 )
                                             }
-                                            className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${categoria === nome ? "border-mare-rosa bg-mare-rosa text-white" : "border-stone-200 text-stone-600"}`}
+                                            className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${categoria === nome
+                                                ? "border-mare-rosa bg-mare-rosa text-white"
+                                                : "border-stone-200 text-stone-600"
+                                                }`}
                                         >
                                             {nome}
                                         </button>
@@ -332,6 +468,7 @@ export default function MapaView({
                                 >
                                     Limpar filtros
                                 </button>
+
                                 <button
                                     type="button"
                                     onClick={() => setFiltrosAbertos(false)}
@@ -353,6 +490,24 @@ export default function MapaView({
                     </p>
                 )}
 
+                {erroEventos && (
+                    <p
+                        role="alert"
+                        className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                    >
+                        {erroEventos}
+                    </p>
+                )}
+
+                {carregandoEventos && (
+                    <p
+                        role="status"
+                        className="mb-3 rounded-xl bg-white px-4 py-3 text-sm text-stone-500 shadow-sm"
+                    >
+                        Carregando eventos do servidor...
+                    </p>
+                )}
+
                 <section
                     aria-label="Mapa de eventos do Litoral Norte"
                     className="relative isolate h-[520px] overflow-hidden rounded-2xl bg-stone-100 shadow-md shadow-orange-900/10 sm:h-[580px] lg:h-[650px] lg:rounded-3xl"
@@ -369,9 +524,11 @@ export default function MapaView({
                             <div className="grid size-14 place-items-center rounded-full bg-white text-mare-laranja shadow-sm">
                                 <IconePino size={26} />
                             </div>
+
                             <h2 className="mt-4 font-titulo text-xl text-stone-800">
                                 Configure o mapa para visualizar os eventos
                             </h2>
+
                             <p className="mt-2 max-w-md text-sm leading-relaxed text-stone-600">
                                 Adicione sua chave do MapTiler em{" "}
                                 <code className="rounded bg-white px-1.5 py-0.5 text-xs">
@@ -428,35 +585,37 @@ export default function MapaView({
                                     className="object-cover"
                                 />
                             </div>
+
                             <div className="min-w-0 flex-1">
                                 <p className="text-[10px] font-bold uppercase tracking-wide text-mare-rosa">
                                     {eventoSelecionado.categoria}
                                 </p>
+
                                 <h2 className="mt-1 line-clamp-2 font-card text-base font-bold leading-tight text-stone-900">
                                     {eventoSelecionado.titulo}
                                 </h2>
+
                                 <p className="mt-1 flex items-center gap-1 text-[11px] text-stone-500">
                                     <IconeCalendario size={12} />
                                     {eventoSelecionado.data} •{" "}
                                     {eventoSelecionado.hora}
                                 </p>
+
                                 <p className="mt-0.5 flex items-center gap-1 text-[11px] text-stone-500">
                                     <IconePino size={12} />
                                     {eventoSelecionado.local},{" "}
-                                    {eventoSelecionado.cidade}
+                                    {eventoSelecionado.cidade ??
+                                        "Cidade não informada"}
                                 </p>
+
                                 <div className="mt-2 flex items-center gap-2">
-                                    {eventoSelecionado.gratuito === true && (
-                                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-700">
-                                            Gratuito
-                                        </span>
-                                    )}
                                     {eventoSelecionado.precisao ===
                                         "aproximada" && (
-                                        <span className="text-[9px] text-amber-700">
-                                            Local aproximado
-                                        </span>
-                                    )}
+                                            <span className="text-[9px] text-amber-700">
+                                                Local aproximado
+                                            </span>
+                                        )}
+
                                     <Link
                                         href={`/eventos/${eventoSelecionado.id}`}
                                         className="ml-auto text-[10px] font-bold uppercase text-mare-rosa hover:underline"
@@ -465,21 +624,37 @@ export default function MapaView({
                                     </Link>
                                 </div>
                             </div>
-                            <BotaoFavorito
-                                evento={eventoSelecionado}
-                                ativo={favoritos.includes(eventoSelecionado.id)}
-                                onAlternar={favoritar}
-                                className="absolute right-2 top-2 z-20 size-7 shadow"
-                            />
+
+                            <button
+                                type="button"
+                                aria-label={
+                                    favoritos.includes(eventoSelecionado.id)
+                                        ? "Remover dos favoritos"
+                                        : "Adicionar aos favoritos"
+                                }
+                                aria-pressed={favoritos.includes(eventoSelecionado.id)}
+                                onClick={() => favoritar(eventoSelecionado.id)}
+                                className={`absolute right-2 top-2 z-20 grid size-8 place-items-center rounded-full shadow transition ${favoritos.includes(eventoSelecionado.id)
+                                    ? "bg-rose-100 text-mare-rosa"
+                                    : "bg-white text-stone-500 hover:bg-rose-50 hover:text-mare-rosa"
+                                    }`}
+                            >
+                                <IconeCoracao size={17} />
+                            </button>
                         </article>
                     )}
 
-                    {eventosFiltrados.length === 0 &&
+                    {!carregandoEventos &&
+                        eventosFiltrados.length === 0 &&
+                        !erroEventos &&
                         process.env.NEXT_PUBLIC_MAPTILER_KEY && (
                             <div className="absolute inset-x-4 top-4 z-[1100] rounded-xl bg-white/95 p-4 text-center shadow-lg">
                                 <p className="text-sm font-semibold text-stone-800">
-                                    Nenhum evento encontrado com esses filtros.
+                                    {eventosComCoordenadas.length === 0
+                                        ? "Ainda não existem eventos aprovados com localização cadastrada."
+                                        : "Nenhum evento encontrado com esses filtros."}
                                 </p>
+
                                 <button
                                     type="button"
                                     onClick={limparFiltros}
@@ -494,13 +669,12 @@ export default function MapaView({
                 {eventosFiltrados.some(
                     (evento) => evento.precisao === "aproximada",
                 ) && (
-                    <p className="mt-3 text-[11px] leading-relaxed text-stone-500">
-                        Alguns marcadores são aproximados porque o cadastro
-                        atual não informa o endereço completo ou as coordenadas
-                        exatas do evento. Confira o local com a organização
-                        antes de se deslocar.
-                    </p>
-                )}
+                        <p className="mt-3 text-[11px] leading-relaxed text-stone-500">
+                            Alguns marcadores são aproximados porque o local
+                            informado não possui confirmação de ponto exato.
+                            Confira o local com a organização antes de se deslocar.
+                        </p>
+                    )}
 
                 <div className="mt-4 flex items-center justify-between text-xs text-stone-500 lg:mt-5">
                     <span>
@@ -509,6 +683,7 @@ export default function MapaView({
                             ? "evento encontrado"
                             : "eventos encontrados"}
                     </span>
+
                     {(busca || quantidadeFiltrosAtivos > 0) && (
                         <button
                             type="button"
@@ -528,12 +703,16 @@ export default function MapaView({
                 <ul className="mx-auto flex max-w-xl items-stretch justify-around">
                     {abas.map(({ href, label, Icone }) => {
                         const ativo = label === "Mapa";
+
                         return (
                             <li key={label} className="flex-1">
                                 <Link
                                     href={href}
                                     aria-current={ativo ? "page" : undefined}
-                                    className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${ativo ? "font-bold text-mare-laranja" : "text-stone-400"}`}
+                                    className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${ativo
+                                        ? "font-bold text-mare-laranja"
+                                        : "text-stone-400"
+                                        }`}
                                 >
                                     <Icone size={22} />
                                     {label}

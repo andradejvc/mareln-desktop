@@ -174,8 +174,8 @@ export async function apiRequest<T>(
   if (!response.ok) {
     const mensagem =
       dados &&
-      typeof dados === "object" &&
-      "message" in dados
+        typeof dados === "object" &&
+        "message" in dados
         ? dados.message
         : null;
 
@@ -187,6 +187,79 @@ export async function apiRequest<T>(
       typeof mensagem === "string"
         ? mensagem
         : `Erro na comunicação com a API (${response.status}).`,
+    );
+  }
+
+  return dados as T;
+}
+
+export async function apiUpload<T>(
+  path: string,
+  arquivo: FormData,
+): Promise<T> {
+  if (!API_BASE_URL) {
+    throw new Error(
+      "URL da API não configurada. Verifique o arquivo .env.local.",
+    );
+  }
+
+  const executarRequisicao = async (
+    token: string,
+  ): Promise<Response> => {
+    try {
+      return await fetch(
+        `${API_BASE_URL}/${path.replace(/^\/+/, "")}`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: arquivo,
+        },
+      );
+    } catch {
+      throw new Error(
+        "Não foi possível conectar ao servidor. Verifique se o backend está funcionando.",
+      );
+    }
+  };
+
+  let token = lerAccessToken();
+
+  if (!token) {
+    throw new Error("Sua sessão expirou. Entre novamente.");
+  }
+
+  let response = await executarRequisicao(token);
+
+  if (response.status === 401) {
+    const novoAccessToken = await renovarAccessToken(token);
+
+    if (novoAccessToken) {
+      token = novoAccessToken;
+      response = await executarRequisicao(token);
+    }
+  }
+
+  const dados: unknown = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const mensagem =
+      dados &&
+        typeof dados === "object" &&
+        "message" in dados
+        ? dados.message
+        : null;
+
+    if (Array.isArray(mensagem)) {
+      throw new Error(mensagem.join(", "));
+    }
+
+    throw new Error(
+      typeof mensagem === "string"
+        ? mensagem
+        : `Erro no envio do arquivo (${response.status}).`,
     );
   }
 

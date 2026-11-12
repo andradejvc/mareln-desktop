@@ -1,7 +1,11 @@
 
-import { apiRequest } from "@/lib/api";
+import { apiRequest, apiUpload } from "@/lib/api";
 import { cidades, type Cidade } from "@/data/eventos";
 import { lerAccessToken } from "@/lib/usuario";
+
+export type PrecisaoLocalizacao = "EXATA" | "APROXIMADA";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "");
 
 export type EventoBackend = {
     id: number;
@@ -9,6 +13,11 @@ export type EventoBackend = {
     descricao: string;
     data: string;
     local: string;
+    cidade: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    precisaoLocalizacao: PrecisaoLocalizacao | null;
+    imagemUrl: string | null;
     status: "PENDENTE" | "APROVADO" | "REJEITADO";
     usuarioId: number;
     categoriaId: number | null;
@@ -33,6 +42,9 @@ export type EventoExplorar = {
     hora: string;
     local: string;
     cidade: Cidade | null;
+    latitude: number | null;
+    longitude: number | null;
+    precisaoLocalizacao: PrecisaoLocalizacao | null;
     imagem: string;
     status: EventoBackend["status"];
 };
@@ -48,17 +60,49 @@ const imagensPorCategoria: Record<string, string> = {
 
 const imagemPadrao = "/image/terceira-img.jpg";
 
-function identificarCidade(local: string): Cidade | null {
-    const normalizar = (valor: string) =>
-        valor.normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .trim()
-            .toLowerCase();
+function normalizarTexto(valor: string) {
+    return valor
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLowerCase();
+}
+
+function identificarCidade(
+    valor: string | null | undefined,
+): Cidade | null {
+    if (!valor) return null;
+
+    const texto = normalizarTexto(valor);
 
     return (
-        cidades.find((cidade) => normalizar(cidade) === normalizar(local)) ??
-        null
+        cidades.find((cidade) => {
+            const nome = normalizarTexto(cidade);
+
+            return (
+                texto === nome ||
+                texto.endsWith(`, ${nome}`) ||
+                texto.endsWith(` - ${nome}`)
+            );
+        }) ?? null
     );
+}
+
+function obterImagemEvento(
+    imagemUrl: string | null,
+    categoria: string,
+): string {
+    if (!imagemUrl) {
+        return imagensPorCategoria[categoria] ?? imagemPadrao;
+    }
+
+    if (/^https?:\/\//i.test(imagemUrl)) {
+        return imagemUrl;
+    }
+
+    return API_BASE_URL
+        ? `${API_BASE_URL}${imagemUrl}`
+        : imagemUrl;
 }
 
 function normalizarEvento(evento: EventoBackend): EventoExplorar {
@@ -75,19 +119,30 @@ function normalizarEvento(evento: EventoBackend): EventoExplorar {
         titulo: evento.titulo,
         descricao: evento.descricao,
         categoria,
+
         data: new Intl.DateTimeFormat("pt-BR", {
             day: "2-digit",
             month: "short",
             timeZone: "America/Sao_Paulo",
         }).format(dataEvento),
+
         hora: new Intl.DateTimeFormat("pt-BR", {
             hour: "2-digit",
             minute: "2-digit",
             timeZone: "America/Sao_Paulo",
         }).format(dataEvento),
+
         local: evento.local,
-        cidade: identificarCidade(evento.local),
-        imagem: imagensPorCategoria[categoria] ?? imagemPadrao,
+
+        cidade:
+            identificarCidade(evento.cidade) ??
+            identificarCidade(evento.local),
+
+        latitude: evento.latitude,
+        longitude: evento.longitude,
+        precisaoLocalizacao: evento.precisaoLocalizacao,
+
+        imagem: obterImagemEvento(evento.imagemUrl, categoria),
         status: evento.status,
     };
 }
@@ -97,6 +152,10 @@ export async function listarEventos(): Promise<EventoExplorar[]> {
         method: "GET",
         cache: "no-store",
     });
+
+    if (!Array.isArray(resposta)) {
+        throw new Error("A API retornou uma lista de eventos inválida.");
+    }
 
     return resposta
         .filter((evento) => evento.status === "APROVADO")
@@ -135,7 +194,16 @@ export type NovoEvento = {
     descricao: string;
     data: string;
     local: string;
+    cidade?: string;
+    latitude?: number;
+    longitude?: number;
+    precisaoLocalizacao?: PrecisaoLocalizacao;
+    imagemUrl?: string;
     categoriaId?: number;
+};
+
+export type ResultadoUploadImagem = {
+    imagemUrl: string;
 };
 
 function obterHeadersAutenticados(): HeadersInit {
@@ -148,6 +216,37 @@ function obterHeadersAutenticados(): HeadersInit {
     return {
         Authorization: `Bearer ${token}`,
     };
+}
+
+export async function enviarImagemEvento(
+    arquivo: File,
+): Promise<ResultadoUploadImagem> {
+    const tiposPermitidos = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+    ];
+
+    if (!tiposPermitidos.includes(arquivo.type)) {
+        throw new Error("Escolha uma imagem JPEG, PNG ou WebP.");
+    }
+
+    if (arquivo.size > 5 * 1024 * 1024) {
+        throw new Error("A imagem deve ter no máximo 5 MB.");
+    }
+
+    if (arquivo.size === 0) {
+        throw new Error("O arquivo selecionado está vazio.");
+    }
+
+    const formulario = new FormData();
+
+    formulario.append("imagem", arquivo);
+
+    return apiUpload<ResultadoUploadImagem>(
+        "eventos/imagem",
+        formulario,
+    );
 }
 
 export async function listarCategorias(): Promise<CategoriaBackend[]> {
