@@ -725,9 +725,9 @@ export default function DivulgarEventoView() {
                                 {resultadosLocalizacao.map((resultado) => {
                                     const selecionado =
                                         localizacaoSelecionada?.origem ===
-                                            "BUSCA" &&
+                                        "BUSCA" &&
                                         localizacaoSelecionada.nome ===
-                                            resultado.nome;
+                                        resultado.nome;
 
                                     return (
                                         <button
@@ -737,11 +737,10 @@ export default function DivulgarEventoView() {
                                             onClick={() =>
                                                 selecionarLocalizacao(resultado)
                                             }
-                                            className={`w-full rounded-xl border p-4 text-left transition ${
-                                                selecionado
+                                            className={`w-full rounded-xl border p-4 text-left transition ${selecionado
                                                     ? "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-500/20"
                                                     : "border-stone-200 bg-white hover:border-mare-laranja"
-                                            }`}
+                                                }`}
                                         >
                                             <span className="block text-sm font-semibold text-stone-800">
                                                 {resultado.nome}
@@ -753,15 +752,14 @@ export default function DivulgarEventoView() {
                                                 </span>
 
                                                 <span
-                                                    className={`rounded-full px-2 py-1 text-[10px] font-bold ${
-                                                        resultado.precisaoLocalizacao ===
-                                                        "EXATA"
+                                                    className={`rounded-full px-2 py-1 text-[10px] font-bold ${resultado.precisaoLocalizacao ===
+                                                            "EXATA"
                                                             ? "bg-emerald-100 text-emerald-700"
                                                             : "bg-amber-100 text-amber-800"
-                                                    }`}
+                                                        }`}
                                                 >
                                                     {resultado.precisaoLocalizacao ===
-                                                    "EXATA"
+                                                        "EXATA"
                                                         ? "Ponto de interesse"
                                                         : "Localização aproximada"}
                                                 </span>
@@ -840,26 +838,25 @@ export default function DivulgarEventoView() {
                                 </p>
 
                                 <span
-                                    className={`mt-3 inline-block rounded-full px-3 py-1 text-[10px] font-bold ${
-                                        localizacaoSelecionada.precisaoLocalizacao ===
-                                        "EXATA"
+                                    className={`mt-3 inline-block rounded-full px-3 py-1 text-[10px] font-bold ${localizacaoSelecionada.precisaoLocalizacao ===
+                                            "EXATA"
                                             ? "bg-emerald-100 text-emerald-700"
                                             : "bg-amber-100 text-amber-800"
-                                    }`}
+                                        }`}
                                 >
                                     {localizacaoSelecionada.precisaoLocalizacao ===
-                                    "EXATA"
+                                        "EXATA"
                                         ? "PONTO DE INTERESSE"
                                         : "LOCALIZAÇÃO APROXIMADA"}
                                 </span>
 
                                 {localizacaoSelecionada.origem ===
                                     "MANUAL" && (
-                                    <p className="mt-2 text-xs text-amber-800">
-                                        Confirme visualmente se o marcador
-                                        corresponde ao local informado.
-                                    </p>
-                                )}
+                                        <p className="mt-2 text-xs text-amber-800">
+                                            Confirme visualmente se o marcador
+                                            corresponde ao local informado.
+                                        </p>
+                                    )}
 
                                 <button
                                     type="button"
@@ -905,8 +902,8 @@ export default function DivulgarEventoView() {
                                     {carregandoCategorias
                                         ? "Carregando categorias..."
                                         : categorias.length === 0
-                                          ? "Nenhuma categoria disponível"
-                                          : "Sem categoria"}
+                                            ? "Nenhuma categoria disponível"
+                                            : "Sem categoria"}
                                 </option>
 
                                 {categorias.map((categoria) => (

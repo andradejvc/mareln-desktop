@@ -42,6 +42,24 @@ type MapTilerResposta = {
     features?: MapTilerFeature[];
 };
 
+type PlanoConsulta = {
+    texto: string;
+    termosObrigatorios: string[];
+    nomeResultado?: string;
+};
+
+type AliasLocal = {
+    cidade: Cidade;
+    nomes: string[];
+    consultas: PlanoConsulta[];
+};
+
+type LocalizacaoConhecida = {
+    cidade: Cidade;
+    nomes: string[];
+    resultado: ResultadoGeocodificacao;
+};
+
 const AREA_LITORAL_NORTE = {
     oeste: -46.2,
     sul: -24.1,
@@ -49,7 +67,14 @@ const AREA_LITORAL_NORTE = {
     norte: -23.0,
 };
 
-const TIPOS_ACEITOS = ["poi", "address", "road"];
+const TIPOS_ACEITOS = [
+    "poi",
+    "address",
+    "road",
+    "place",
+    "locality",
+    "neighbourhood",
+];
 
 const TERMOS_IGNORADOS = new Set([
     "a",
@@ -67,7 +92,9 @@ const TERMOS_IGNORADOS = new Set([
     "na",
     "nos",
     "nas",
-    "praça",
+]);
+
+const TERMOS_LOCAL_GENERICOS = new Set([
     "praca",
     "rua",
     "avenida",
@@ -82,12 +109,97 @@ const TERMOS_IGNORADOS = new Set([
     "municipal",
 ]);
 
+const CENTROS_CIDADES: Record<Cidade, [number, number]> = {
+    Caraguatatuba: [-45.413, -23.6207],
+    "São Sebastião": [-45.41, -23.8],
+    Ilhabela: [-45.355, -23.778],
+    Ubatuba: [-45.083, -23.433],
+};
+
+// Locais públicos conhecidos com coordenadas de referência.
+// Esses resultados não dependem da indexação do MapTiler.
+//
+// Praça Cândido Mota:
+// Coordenadas geográficas publicadas para a praça.
+// Endereço institucional: Praça Dr. Cândido Motta, Centro.
+//
+// Praça da Cultura:
+// Endereço: Av. Dr. Arthur da Costa Filho, 25, Centro.
+// Coordenada de referência obtida a partir do mapa do endereço.
+// Mantida como APROXIMADA, pois não representa levantamento
+// topográfico dos limites exatos da praça.
+const LOCALIZACOES_CONHECIDAS: LocalizacaoConhecida[] = [
+    {
+        cidade: "Caraguatatuba",
+        nomes: [
+            "praca candido mota",
+            "praca candido motta",
+            "praca dr candido mota",
+            "praca dr candido motta",
+            "praca doutor candido mota",
+            "praca doutor candido motta",
+        ],
+        resultado: {
+            id: "local-conhecido-praca-candido-mota",
+            nome: "Praça Cândido Mota",
+            cidade: "Caraguatatuba",
+            latitude: -23.6217181,
+            longitude: -45.4110897,
+            precisaoLocalizacao: "APROXIMADA",
+        },
+    },
+    {
+        cidade: "Caraguatatuba",
+        nomes: [
+            "praca da cultura",
+            "praca cultura",
+        ],
+        resultado: {
+            id: "local-conhecido-praca-da-cultura",
+            nome: "Praça da Cultura",
+            cidade: "Caraguatatuba",
+            latitude: -23.6240178,
+            longitude: -45.4090815,
+            precisaoLocalizacao: "APROXIMADA",
+        },
+    },
+];
+
+// Alias remoto para um local cujo nome conhecido é diferente
+// do nome encontrado na base geográfica.
+const ALIASES_LOCAIS: AliasLocal[] = [
+    {
+        cidade: "Ilhabela",
+        nomes: [
+            "praca de eventos do galera",
+            "praca de eventos galera",
+        ],
+        consultas: [
+            {
+                texto: "Campo do Galera",
+                termosObrigatorios: ["campo", "galera"],
+                nomeResultado: "Campo do Galera",
+            },
+        ],
+    },
+];
+
+const SINONIMOS_TERMOS: Record<string, string[]> = {
+    av: ["av", "avenida"],
+    avenida: ["av", "avenida"],
+    rod: ["rod", "rodovia"],
+    rodovia: ["rod", "rodovia"],
+    tv: ["tv", "travessa"],
+    travessa: ["tv", "travessa"],
+};
+
 function normalizarTexto(valor: string): string {
     return valor
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
-        .trim();
+        .trim()
+        .replace(/\s+/g, " ");
 }
 
 function obterTermosSignificativos(valor: string): string[] {
@@ -104,14 +216,64 @@ function obterTermosSignificativos(valor: string): string[] {
     ];
 }
 
+// Procura primeiro os locais conhecidos e suas variações de escrita.
+function obterLocalizacaoConhecida(
+    local: string,
+    cidade: Cidade,
+): ResultadoGeocodificacao | null {
+    const nomeNormalizado = normalizarTexto(local);
+
+    const localEncontrado = LOCALIZACOES_CONHECIDAS.find(
+        (item) =>
+            item.cidade === cidade &&
+            item.nomes.some(
+                (nome) => normalizarTexto(nome) === nomeNormalizado,
+            ),
+    );
+
+    return localEncontrado?.resultado ?? null;
+}
+
+function obterPlanosConsulta(
+    local: string,
+    cidade: Cidade,
+): PlanoConsulta[] {
+    const planos: PlanoConsulta[] = [
+        {
+            texto: local,
+            termosObrigatorios: obterTermosSignificativos(local),
+        },
+    ];
+
+    const nomeNormalizado = normalizarTexto(local);
+
+    const alias = ALIASES_LOCAIS.find(
+        (item) =>
+            item.cidade === cidade &&
+            item.nomes.some(
+                (nome) => normalizarTexto(nome) === nomeNormalizado,
+            ),
+    );
+
+    if (alias) {
+        planos.push(...alias.consultas);
+    }
+
+    return planos.filter(
+        (plano, indice, todos) =>
+            todos.findIndex(
+                (outro) =>
+                    normalizarTexto(outro.texto) ===
+                    normalizarTexto(plano.texto),
+            ) === indice,
+    );
+}
+
 function correspondeNome(
     resultado: MapTilerFeature,
-    localPesquisado: string,
+    termosObrigatorios: string[],
 ): boolean {
-    const termos = obterTermosSignificativos(localPesquisado);
-
-    // Evita aceitar pesquisas genéricas demais.
-    if (termos.length === 0) {
+    if (termosObrigatorios.length === 0) {
         return false;
     }
 
@@ -123,18 +285,21 @@ function correspondeNome(
         resultado.address,
     ];
 
-    const textoResultado = normalizarTexto(
-        textos.filter(Boolean).join(" "),
-    );
-
     const palavrasResultado = new Set(
-        textoResultado.split(/[^a-z0-9]+/).filter(Boolean),
+        normalizarTexto(
+            textos.filter(Boolean).join(" "),
+        )
+            .split(/[^a-z0-9]+/)
+            .filter(Boolean),
     );
 
-    // Todos os termos relevantes precisam aparecer no resultado.
-    return termos.every((termo) =>
-        palavrasResultado.has(termo),
-    );
+    return termosObrigatorios.every((termo) => {
+        const alternativas = SINONIMOS_TERMOS[termo] ?? [termo];
+
+        return alternativas.some((alternativa) =>
+            palavrasResultado.has(alternativa),
+        );
+    });
 }
 
 function correspondeCidade(
@@ -157,17 +322,18 @@ function correspondeCidade(
         },
     );
 
-    // Quando a API fornece o município no contexto,
-    // esse dado tem prioridade sobre o nome completo do resultado.
-    if (contextosMunicipais.length > 0) {
-        return contextosMunicipais.some(
+    if (
+        contextosMunicipais.some(
             (contexto) =>
                 normalizarTexto(contexto.text ?? "") ===
                 cidadeNormalizada,
-        );
+        )
+    ) {
+        return true;
     }
 
-    // Alternativa: verificar os segmentos do endereço completo.
+    // Se a resposta não identificar claramente o município no contexto,
+    // tenta validar pelo endereço completo.
     const segmentos = [
         resultado.place_name,
         resultado.matching_place_name,
@@ -201,41 +367,12 @@ function estaNoLitoralNorte(
     );
 }
 
-export async function buscarLocalizacoes(
-    local: string,
+async function consultarMapTiler(
+    plano: PlanoConsulta,
     cidade: Cidade,
-): Promise<ResultadoGeocodificacao[]> {
-    const apiKey = process.env.NEXT_PUBLIC_MAPTILER_KEY?.trim();
-
-    if (!apiKey) {
-        throw new Error(
-            "A chave do MapTiler não está configurada no frontend.",
-        );
-    }
-
-    const localLimpo = local.trim();
-
-    if (localLimpo.length < 3) {
-        throw new Error(
-            "Informe um endereço ou nome de local mais completo.",
-        );
-    }
-
-    if (!cidades.includes(cidade)) {
-        throw new Error("Selecione uma cidade válida.");
-    }
-
-    if (obterTermosSignificativos(localLimpo).length === 0) {
-        throw new Error(
-            "Informe um nome mais específico para encontrar a localização.",
-        );
-    }
-
-    const consultaLocal = /^praca\b/.test(normalizarTexto(localLimpo))
-        ? obterTermosSignificativos(localLimpo).join(" ")
-        : localLimpo;
-
-    const consulta = `${consultaLocal}, ${cidade}, São Paulo, Brasil`;
+    apiKey: string,
+): Promise<MapTilerFeature[]> {
+    const consulta = `${plano.texto}, ${cidade}, São Paulo, Brasil`;
 
     const parametros = new URLSearchParams({
         key: apiKey,
@@ -243,7 +380,7 @@ export async function buscarLocalizacoes(
         language: "pt",
         limit: "10",
         autocomplete: "false",
-        fuzzyMatch: "false",
+        fuzzyMatch: "true",
         types: TIPOS_ACEITOS.join(","),
         bbox: [
             AREA_LITORAL_NORTE.oeste,
@@ -251,6 +388,7 @@ export async function buscarLocalizacoes(
             AREA_LITORAL_NORTE.leste,
             AREA_LITORAL_NORTE.norte,
         ].join(","),
+        proximity: CENTROS_CIDADES[cidade].join(","),
     });
 
     const url =
@@ -287,16 +425,22 @@ export async function buscarLocalizacoes(
         );
     }
 
-    const resultados = dados.features.flatMap(
+    return dados.features;
+}
+
+function filtrarResultados(
+    features: MapTilerFeature[],
+    plano: PlanoConsulta,
+    cidade: Cidade,
+): ResultadoGeocodificacao[] {
+    return features.flatMap(
         (feature, indice): ResultadoGeocodificacao[] => {
             const tipos = feature.place_type ?? [];
 
-            // Aceita somente pontos de interesse, endereços e vias.
             if (!tipos.some((tipo) => TIPOS_ACEITOS.includes(tipo))) {
                 return [];
             }
 
-            // Descarta resultados com baixa relevância, quando informada.
             if (
                 typeof feature.relevance === "number" &&
                 feature.relevance < 0.5
@@ -312,7 +456,12 @@ export async function buscarLocalizacoes(
                 return [];
             }
 
-            if (!correspondeNome(feature, localLimpo)) {
+            if (
+                !correspondeNome(
+                    feature,
+                    plano.termosObrigatorios,
+                )
+            ) {
                 return [];
             }
 
@@ -340,7 +489,8 @@ export async function buscarLocalizacoes(
             }
 
             const nome =
-                feature.place_name?.trim() ||
+                plano.nomeResultado ??
+                feature.place_name?.trim() ??
                 feature.text?.trim();
 
             if (!nome) {
@@ -354,9 +504,6 @@ export async function buscarLocalizacoes(
                     cidade,
                     latitude,
                     longitude,
-
-                    // POIs são representados como pontos específicos.
-                    // Endereços e vias ficam como aproximação por segurança.
                     precisaoLocalizacao: tipos.includes("poi")
                         ? "EXATA"
                         : "APROXIMADA",
@@ -364,6 +511,75 @@ export async function buscarLocalizacoes(
             ];
         },
     );
+}
 
-    return resultados;
+export async function buscarLocalizacoes(
+    local: string,
+    cidade: Cidade,
+): Promise<ResultadoGeocodificacao[]> {
+    const localLimpo = local.trim();
+
+    if (localLimpo.length < 3) {
+        throw new Error(
+            "Informe um endereço ou nome de local mais completo.",
+        );
+    }
+
+    if (!cidades.includes(cidade)) {
+        throw new Error("Selecione uma cidade válida.");
+    }
+
+    const termos = obterTermosSignificativos(localLimpo);
+
+    if (
+        termos.length === 0 ||
+        termos.every((termo) =>
+            TERMOS_LOCAL_GENERICOS.has(termo),
+        )
+    ) {
+        throw new Error(
+            "Informe também o nome específico do local, estabelecimento ou endereço.",
+        );
+    }
+
+    // 1. Locais conhecidos: não dependem do MapTiler.
+    const localizacaoConhecida = obterLocalizacaoConhecida(
+        localLimpo,
+        cidade,
+    );
+
+    if (localizacaoConhecida) {
+        return [localizacaoConhecida];
+    }
+
+    // 2. Outros locais: utilizam a geocodificação remota.
+    const apiKey = process.env.NEXT_PUBLIC_MAPTILER_KEY?.trim();
+
+    if (!apiKey) {
+        throw new Error(
+            "A chave do MapTiler não está configurada no frontend.",
+        );
+    }
+
+    const planos = obterPlanosConsulta(localLimpo, cidade);
+
+    for (const plano of planos) {
+        const features = await consultarMapTiler(
+            plano,
+            cidade,
+            apiKey,
+        );
+
+        const resultados = filtrarResultados(
+            features,
+            plano,
+            cidade,
+        );
+
+        if (resultados.length > 0) {
+            return resultados;
+        }
+    }
+
+    return [];
 }
