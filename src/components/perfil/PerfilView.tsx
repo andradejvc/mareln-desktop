@@ -4,29 +4,52 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
-
+import {
+    useEffect,
+    useMemo,
+    useState,
+    type ChangeEvent,
+    type FormEvent,
+} from "react";
 
 import {
     cidades,
     categorias,
-    eventos,
     type Cidade,
     type Categoria,
 } from "@/data/eventos";
+
+import {
+    listarEventos,
+    type EventoExplorar,
+} from "@/lib/eventos-api";
+
 import {
     useUsuario,
     salvarUsuario,
     encerrarSessao,
 } from "@/lib/usuario";
+
 import { useFavoritos } from "@/lib/favoritos";
+import { useEventosMarcados } from "@/lib/eventosMarcados";
+
 import {
     lerFotoPerfil,
-    salvarFotoPerfil,
-    removerFotoPerfil,
+    removerFotoPerfil as removerFotoPerfilLocal,
 } from "@/lib/fotoPerfil";
 
+import {
+    buscarPerfilUsuario,
+    atualizarPerfilUsuario,
+    enviarFotoPerfil as enviarFotoPerfilServidor,
+    excluirFotoPerfil as excluirFotoPerfilServidor,
+    obterUrlFotoPerfil,
+    type PerfilUsuario,
+    type AtualizarPerfil,
+} from "@/lib/perfil-api";
+
 import DashboardNavbar from "../dashboard/DashboardNavbar";
+
 import {
     IconeBusca,
     IconeCalendario,
@@ -55,6 +78,59 @@ const nomesCategorias: Record<Categoria, string> = {
     Feira: "Feiras",
     Gastronomia: "Gastronomia",
 };
+
+const TIPOS_IMAGEM_PERMITIDOS = ["image/jpeg", "image/png", "image/webp"];
+const TAMANHO_MAXIMO_IMAGEM = 5 * 1024 * 1024;
+
+function validarCidade(valor: unknown): Cidade | "" {
+    return typeof valor === "string" && cidades.includes(valor as Cidade)
+        ? (valor as Cidade)
+        : "";
+}
+
+function validarInteresses(valor: unknown): Categoria[] {
+    if (!Array.isArray(valor)) return [];
+
+    return valor.filter(
+        (item): item is Categoria =>
+            typeof item === "string" && categorias.includes(item as Categoria),
+    );
+}
+
+function lerPreferenciasLocais(chave: string): Preferencias {
+    try {
+        const salvo = localStorage.getItem(chave);
+        if (!salvo) return preferenciasVazias;
+
+        const dados: { cidade?: unknown; interesses?: unknown } = JSON.parse(salvo);
+        return {
+            cidade: validarCidade(dados.cidade),
+            interesses: validarInteresses(dados.interesses),
+        };
+    } catch {
+        return preferenciasVazias;
+    }
+}
+
+function salvarPreferenciasLocais(chave: string, preferencias: Preferencias) {
+    try {
+        localStorage.setItem(chave, JSON.stringify(preferencias));
+    } catch {
+        // O backend continua sendo a fonte principal dos dados.
+    }
+}
+
+function aplicarPerfilNaSessao(perfil: PerfilUsuario) {
+    salvarUsuario({
+        id: perfil.id,
+        nome: perfil.nome,
+        email: perfil.email,
+        tipo: perfil.tipo,
+        cidadePreferida: perfil.cidadePreferida,
+        interesses: perfil.interesses,
+        fotoPerfilUrl: perfil.fotoPerfilUrl,
+    });
+}
 
 function Avatar({
     foto,
@@ -90,7 +166,7 @@ function BotaoAcao({
     onClick,
     variante = "claro",
 }: {
-    children: import("react").ReactNode
+    children: import("react").ReactNode;
     onClick: () => void;
     variante?: "claro" | "vermelho";
 }) {
@@ -98,10 +174,11 @@ function BotaoAcao({
         <button
             type="button"
             onClick={onClick}
-            className={`w-full rounded-xl px-5 py-3 text-center font-titulo text-base font-bold transition hover:brightness-95 ${variante === "vermelho"
-                ? "bg-red-700 text-white"
-                : "bg-mare-creme text-stone-900"
-                }`}
+            className={`w-full rounded-xl px-5 py-3 text-center font-titulo text-base font-bold transition hover:brightness-95 ${
+                variante === "vermelho"
+                    ? "bg-red-700 text-white"
+                    : "bg-mare-creme text-stone-900"
+            }`}
         >
             {children}
         </button>
@@ -111,20 +188,33 @@ function BotaoAcao({
 export default function PerfilView() {
     const router = useRouter();
     const usuario = useUsuario();
-    const { favoritos, alternarFavorito } = useFavoritos();
+
+    // Favoritos permanecem independentes dos eventos marcados.
+    const { favoritos } = useFavoritos();
+
+    // Carrega e gerencia os eventos marcados pela API.
+    const {
+        eventosMarcados: idsEventosMarcados,
+        alternarEventoMarcado,
+        carregandoEventosMarcados: carregandoMarcacoes,
+        erroEventosMarcados: erroMarcacoes,
+    } = useEventosMarcados();
 
     const nome = usuario?.nome ?? "Usuário";
     const email = usuario?.email ?? "";
+    const usuarioId = usuario?.id;
+
+    const podeDivulgar =
+        usuario?.tipo === "DIVULGADOR" || usuario?.tipo === "ADMIN";
 
     const chaveConta = email || "conta-local";
     const chaveFoto = chaveConta;
     const chavePreferencias = `mareln-perfil-preferencias:${encodeURIComponent(chaveConta)}`;
+    const chaveMigracaoPreferencias = `mareln-perfil-preferencias-migradas:${encodeURIComponent(chaveConta)}`;
+    const chaveMigracaoFoto = `mareln-perfil-foto-migrada:${encodeURIComponent(chaveConta)}`;
 
     const [fotoUrl, setFotoUrl] = useState<string | null>(null);
-    const [preferencias, setPreferencias] = useState<Preferencias>(
-        preferenciasVazias,
-    );
-
+    const [preferencias, setPreferencias] = useState<Preferencias>(preferenciasVazias);
     const [editorAberto, setEditorAberto] = useState(false);
     const [nomeRascunho, setNomeRascunho] = useState(nome);
     const [cidadeRascunho, setCidadeRascunho] = useState<Cidade | "">("");
@@ -132,37 +222,255 @@ export default function PerfilView() {
     const [fotoPreview, setFotoPreview] = useState<string | null>(null);
     const [arquivoFoto, setArquivoFoto] = useState<File | null>(null);
     const [removerFoto, setRemoverFoto] = useState(false);
-
     const [erro, setErro] = useState("");
+    const [erroPerfil, setErroPerfil] = useState<string | null>(null);
+    const [carregandoPerfil, setCarregandoPerfil] = useState(true);
     const [salvando, setSalvando] = useState(false);
     const [aviso, setAviso] = useState<string | null>(null);
     const [menuAberto, setMenuAberto] = useState(false);
     const [bannerVisivel, setBannerVisivel] = useState(true);
 
+    // Eventos reais carregados da API.
+    const [eventosApi, setEventosApi] = useState<EventoExplorar[]>([]);
+    const [carregandoEventos, setCarregandoEventos] = useState(true);
+    const [erroEventos, setErroEventos] = useState<string | null>(null);
+
+    // Cruza os IDs dos eventos marcados com os eventos reais do PostgreSQL.
     const eventosMarcados = useMemo(
-        () => eventos.filter((evento) => favoritos.includes(evento.id)),
-        [favoritos],
+        () =>
+            eventosApi.filter((evento) =>
+                idsEventosMarcados.includes(evento.id),
+            ),
+        [eventosApi, idsEventosMarcados],
     );
 
+    const carregandoEventosMarcados =
+        carregandoEventos || carregandoMarcacoes;
+
+    const erroEventosMarcados = erroEventos ?? erroMarcacoes;
+
+    // Carrega os eventos aprovados diretamente do backend.
+    useEffect(() => {
+        let ativo = true;
+
+        async function carregarEventos() {
+            setCarregandoEventos(true);
+            setErroEventos(null);
+
+            try {
+                const resposta = await listarEventos();
+
+                if (ativo) {
+                    setEventosApi(resposta);
+                }
+            } catch (erroCarregamento) {
+                if (ativo) {
+                    setErroEventos(
+                        erroCarregamento instanceof Error
+                            ? erroCarregamento.message
+                            : "Não foi possível carregar os eventos.",
+                    );
+                }
+            } finally {
+                if (ativo) {
+                    setCarregandoEventos(false);
+                }
+            }
+        }
+
+        void carregarEventos();
+
+        return () => {
+            ativo = false;
+        };
+    }, []);
+
+    // Carrega o perfil persistido no servidor e migra dados antigos do navegador.
     useEffect(() => {
         let cancelado = false;
 
-        lerFotoPerfil(chaveFoto)
-            .then((arquivo) => {
-                if (!cancelado && arquivo) {
-                    setFotoUrl(URL.createObjectURL(arquivo));
+        async function carregarPerfil() {
+            setCarregandoPerfil(true);
+            setErroPerfil(null);
+            setPreferencias(lerPreferenciasLocais(chavePreferencias));
+
+            if (!usuarioId) {
+                setCarregandoPerfil(false);
+                setErroPerfil(
+                    "Não foi possível identificar sua conta. Saia e entre novamente para sincronizar seu perfil.",
+                );
+                return;
+            }
+
+            try {
+                let perfil = await buscarPerfilUsuario(usuarioId);
+                if (cancelado) return;
+
+                // Migração única das preferências que estavam no localStorage.
+                let preferenciasMigradas = false;
+                try {
+                    preferenciasMigradas =
+                        localStorage.getItem(chaveMigracaoPreferencias) === "true";
+                } catch {
+                    preferenciasMigradas = true;
                 }
-            })
-            .catch(() => {
+
+                if (!preferenciasMigradas) {
+                    const legadas = lerPreferenciasLocais(chavePreferencias);
+                    const migracao: AtualizarPerfil = {};
+
+                    if (!perfil.cidadePreferida && legadas.cidade) {
+                        migracao.cidadePreferida = legadas.cidade;
+                    }
+
+                    if (
+                        (!perfil.interesses || perfil.interesses.length === 0) &&
+                        legadas.interesses.length > 0
+                    ) {
+                        migracao.interesses = legadas.interesses;
+                    }
+
+                    if (Object.keys(migracao).length > 0) {
+                        perfil = await atualizarPerfilUsuario(usuarioId, migracao);
+                        if (cancelado) return;
+                    }
+
+                    try {
+                        localStorage.setItem(chaveMigracaoPreferencias, "true");
+                    } catch {
+                        // A sincronização principal já ocorreu no servidor.
+                    }
+                }
+
+                const preferenciasServidor: Preferencias = {
+                    cidade: validarCidade(perfil.cidadePreferida),
+                    interesses: validarInteresses(perfil.interesses),
+                };
+
+                setPreferencias(preferenciasServidor);
+                salvarPreferenciasLocais(chavePreferencias, preferenciasServidor);
+                aplicarPerfilNaSessao(perfil);
+
+                const fotoServidor = obterUrlFotoPerfil(perfil.fotoPerfilUrl);
+
+                if (fotoServidor) {
+                    setFotoUrl(fotoServidor);
+                    try {
+                        await removerFotoPerfilLocal(chaveFoto);
+                    } catch {
+                        // Uma cópia antiga no navegador não afeta a foto do servidor.
+                    }
+                    try {
+                        localStorage.setItem(chaveMigracaoFoto, "true");
+                    } catch {
+                        // Sem persistência de marcador, a URL do servidor continua válida.
+                    }
+                } else {
+                    // Compatibilidade: migra a foto antiga do IndexedDB para o servidor.
+                    let fotoLegada: Blob | null = null;
+                    try {
+                        fotoLegada = await lerFotoPerfil(chaveFoto);
+                    } catch {
+                        fotoLegada = null;
+                    }
+
+                    if (cancelado) return;
+
+                    if (fotoLegada) {
+                        const urlLocal = URL.createObjectURL(fotoLegada);
+                        setFotoUrl(urlLocal);
+
+                        const extensaoPorTipo: Record<string, string> = {
+                            "image/jpeg": "jpg",
+                            "image/png": "png",
+                            "image/webp": "webp",
+                        };
+
+                        const extensao = extensaoPorTipo[fotoLegada.type];
+
+                        if (extensao) {
+                            try {
+                                const arquivoLegado = new File(
+                                    [fotoLegada],
+                                    `foto-perfil.${extensao}`,
+                                    { type: fotoLegada.type },
+                                );
+
+                                const perfilComFoto =
+                                    await enviarFotoPerfilServidor(arquivoLegado);
+
+                                if (cancelado) return;
+
+                                aplicarPerfilNaSessao(perfilComFoto);
+                                setFotoUrl(
+                                    obterUrlFotoPerfil(perfilComFoto.fotoPerfilUrl),
+                                );
+
+                                await removerFotoPerfilLocal(chaveFoto);
+
+                                try {
+                                    localStorage.setItem(chaveMigracaoFoto, "true");
+                                } catch {
+                                    // A foto já foi migrada para o servidor.
+                                }
+                            } catch (erroMigracao) {
+                                if (!cancelado) {
+                                    setErroPerfil(
+                                        erroMigracao instanceof Error
+                                            ? `Sua foto antiga continua neste navegador, mas não foi possível enviá-la ao servidor: ${erroMigracao.message}`
+                                            : "Sua foto antiga continua neste navegador, mas não foi possível enviá-la ao servidor.",
+                                    );
+                                }
+                            }
+                        } else {
+                            setErroPerfil(
+                                "Sua foto antiga está em um formato que o servidor não aceita. Escolha uma nova foto JPEG, PNG ou WebP para sincronizá-la.",
+                            );
+                        }
+                    } else {
+                        setFotoUrl(null);
+                        try {
+                            localStorage.setItem(chaveMigracaoFoto, "true");
+                        } catch {
+                            // A foto é opcional.
+                        }
+                    }
+                }
+            } catch (erroCarregamento) {
                 if (!cancelado) {
-                    setAviso("Não foi possível carregar sua foto de perfil.");
+                    setErroPerfil(
+                        erroCarregamento instanceof Error
+                            ? erroCarregamento.message
+                            : "Não foi possível carregar seu perfil do servidor.",
+                    );
+
+                    // Mantém a foto local disponível caso a API esteja temporariamente indisponível.
+                    try {
+                        const fotoLocal = await lerFotoPerfil(chaveFoto);
+                        if (!cancelado && fotoLocal) {
+                            setFotoUrl(URL.createObjectURL(fotoLocal));
+                        }
+                    } catch {
+                        // Sem foto local; o avatar padrão continua disponível.
+                    }
                 }
-            });
+            } finally {
+                if (!cancelado) setCarregandoPerfil(false);
+            }
+        }
+
+        void carregarPerfil();
 
         return () => {
             cancelado = true;
         };
-    }, [chaveFoto]);
+    }, [
+        usuarioId,
+        chaveFoto,
+        chavePreferencias,
+        chaveMigracaoFoto,
+        chaveMigracaoPreferencias,
+    ]);
 
     useEffect(() => {
         return () => {
@@ -171,43 +479,6 @@ export default function PerfilView() {
             }
         };
     }, [fotoUrl]);
-
-    useEffect(() => {
-        try {
-            const salvo = localStorage.getItem(chavePreferencias);
-
-            if (!salvo) {
-                setPreferencias(preferenciasVazias);
-                return;
-            }
-
-            const dados: {
-                cidade?: unknown;
-                interesses?: unknown;
-            } = JSON.parse(salvo);
-
-            const cidadeValida =
-                typeof dados.cidade === "string" &&
-                    cidades.includes(dados.cidade as Cidade)
-                    ? (dados.cidade as Cidade)
-                    : "";
-
-            const interessesValidos = Array.isArray(dados.interesses)
-                ? dados.interesses.filter(
-                    (item): item is Categoria =>
-                        typeof item === "string" &&
-                        categorias.includes(item as Categoria),
-                )
-                : [];
-
-            setPreferencias({
-                cidade: cidadeValida,
-                interesses: interessesValidos,
-            });
-        } catch {
-            setPreferencias(preferenciasVazias);
-        }
-    }, [chavePreferencias]);
 
     function abrirEditor() {
         setNomeRascunho(nome);
@@ -231,15 +502,19 @@ export default function PerfilView() {
     function selecionarFoto(event: ChangeEvent<HTMLInputElement>) {
         const arquivo = event.target.files?.[0];
         event.target.value = "";
-
         if (!arquivo) return;
 
-        if (!arquivo.type.startsWith("image/")) {
-            setErro("Selecione um arquivo de imagem.");
+        if (!TIPOS_IMAGEM_PERMITIDOS.includes(arquivo.type)) {
+            setErro("Formato inválido. Escolha uma imagem JPEG, PNG ou WebP.");
             return;
         }
 
-        if (arquivo.size > 5 * 1024 * 1024) {
+        if (arquivo.size === 0) {
+            setErro("O arquivo selecionado está vazio.");
+            return;
+        }
+
+        if (arquivo.size > TAMANHO_MAXIMO_IMAGEM) {
             setErro("A imagem deve ter no máximo 5 MB.");
             return;
         }
@@ -280,6 +555,11 @@ export default function PerfilView() {
             return;
         }
 
+        if (!usuarioId) {
+            setErro("Não foi possível identificar sua conta. Entre novamente.");
+            return;
+        }
+
         setSalvando(true);
         setErro("");
 
@@ -289,31 +569,80 @@ export default function PerfilView() {
                 interesses: interessesRascunho,
             };
 
-            localStorage.setItem(
-                chavePreferencias,
-                JSON.stringify(novasPreferencias),
+            // Nome e preferências são persistidos primeiro no PostgreSQL.
+            let perfilAtualizado = await atualizarPerfilUsuario(usuarioId, {
+                nome: nomeLimpo,
+                cidadePreferida: cidadeRascunho || null,
+                interesses: interessesRascunho,
+            });
+
+            aplicarPerfilNaSessao(perfilAtualizado);
+            setPreferencias(novasPreferencias);
+            salvarPreferenciasLocais(chavePreferencias, novasPreferencias);
+
+            try {
+                localStorage.setItem(chaveMigracaoPreferencias, "true");
+            } catch {
+                // O backend já possui os dados.
+            }
+
+            // Foto é salva/removida no servidor. A API retorna o perfil atualizado.
+            if (arquivoFoto) {
+                try {
+                    perfilAtualizado = await enviarFotoPerfilServidor(arquivoFoto);
+                } catch (erroFoto) {
+                    aplicarPerfilNaSessao(perfilAtualizado);
+                    setErro(
+                        erroFoto instanceof Error
+                            ? `Nome e preferências foram salvos, mas a foto não foi atualizada: ${erroFoto.message}`
+                            : "Nome e preferências foram salvos, mas a foto não foi atualizada.",
+                    );
+                    return;
+                }
+            } else if (removerFoto) {
+                try {
+                    perfilAtualizado = await excluirFotoPerfilServidor();
+                } catch (erroFoto) {
+                    aplicarPerfilNaSessao(perfilAtualizado);
+                    setErro(
+                        erroFoto instanceof Error
+                            ? `Nome e preferências foram salvos, mas a foto não foi removida: ${erroFoto.message}`
+                            : "Nome e preferências foram salvos, mas a foto não foi removida.",
+                    );
+                    return;
+                }
+            }
+
+            aplicarPerfilNaSessao(perfilAtualizado);
+
+            const fotoServidor = obterUrlFotoPerfil(
+                perfilAtualizado.fotoPerfilUrl,
             );
 
-            if (usuario) {
-                salvarUsuario({
-                    nome: nomeLimpo,
-                    email: usuario.email,
-                });
+            if (arquivoFoto || removerFoto) {
+                setFotoUrl(fotoServidor);
+
+                try {
+                    await removerFotoPerfilLocal(chaveFoto);
+                } catch {
+                    // A cópia local pode permanecer sem afetar o servidor.
+                }
+
+                try {
+                    localStorage.setItem(chaveMigracaoFoto, "true");
+                } catch {
+                    // O servidor já é a fonte principal.
+                }
+            } else if (fotoServidor) {
+                setFotoUrl(fotoServidor);
             }
 
-            if (arquivoFoto) {
-                await salvarFotoPerfil(chaveFoto, arquivoFoto);
-                setFotoUrl(URL.createObjectURL(arquivoFoto));
-            } else if (removerFoto) {
-                await removerFotoPerfil(chaveFoto);
-                setFotoUrl(null);
-            }
-
-            setPreferencias(novasPreferencias);
             fecharEditor();
-        } catch {
+        } catch (erroSalvamento) {
             setErro(
-                "Não foi possível salvar as alterações. Verifique o armazenamento do navegador.",
+                erroSalvamento instanceof Error
+                    ? erroSalvamento.message
+                    : "Não foi possível salvar as alterações do perfil.",
             );
         } finally {
             setSalvando(false);
@@ -337,20 +666,36 @@ export default function PerfilView() {
 
     function abrirAvisoSenha() {
         setAviso(
-            "A alteração de senha ficará disponível quando o sistema de autenticação estiver integrado ao backend.",
+            "A alteração de senha está disponível na área de segurança da conta.",
         );
     }
 
     function abrirAvisoDivulgacao() {
-        setAviso(
-            "A divulgação de eventos por usuários ainda está sendo preparada para uma próxima etapa do Maré LN.",
-        );
+        router.push("/divulgar-evento");
     }
 
     const fotoNoEditor = removerFoto ? null : fotoPreview ?? fotoUrl;
 
     return (
         <main className="min-h-screen bg-mare-creme pb-24 lg:pb-10">
+            {carregandoPerfil && (
+                <p
+                    role="status"
+                    className="mx-auto max-w-7xl px-5 pt-3 text-xs text-stone-500"
+                >
+                    Sincronizando seu perfil...
+                </p>
+            )}
+
+            {erroPerfil && (
+                <p
+                    role="alert"
+                    className="mx-auto mt-3 max-w-7xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+                >
+                    {erroPerfil}
+                </p>
+            )}
+
             {/* ===================== DESKTOP ===================== */}
             <div className="mx-auto hidden w-full max-w-7xl px-6 py-5 lg:block">
                 <DashboardNavbar
@@ -361,7 +706,6 @@ export default function PerfilView() {
                 />
 
                 <div className="mt-7 grid grid-cols-[410px_minmax(0,1fr)] items-start gap-14">
-                    {/* Coluna esquerda */}
                     <aside className="space-y-6">
                         <section className="rounded-[2rem] border border-stone-200 bg-white px-7 py-8 text-center">
                             <button
@@ -370,13 +714,16 @@ export default function PerfilView() {
                                 aria-label="Alterar foto e dados do perfil"
                                 className="mx-auto block rounded-full transition hover:scale-[1.03]"
                             >
-                                <Avatar foto={fotoUrl} nome={nome} tamanho="size-36" />
+                                <Avatar
+                                    foto={fotoUrl}
+                                    nome={nome}
+                                    tamanho="size-36"
+                                />
                             </button>
 
                             <h1 className="font-titulo mt-5 text-3xl font-bold text-stone-900">
                                 {nome}
                             </h1>
-
                             <p className="mt-1 break-all text-sm text-stone-500">
                                 {email}
                             </p>
@@ -394,11 +741,11 @@ export default function PerfilView() {
                                 <button
                                     type="button"
                                     onClick={abrirEditor}
-                                    className="flex-1 rounded-xl border-2 border-mare-laranja px-3 py-2.5 text-sm font-bold text-mare-laranja transition hover:bg-mare-laranja hover:text-white"
+                                    disabled={carregandoPerfil}
+                                    className="flex-1 rounded-xl border-2 border-mare-laranja px-3 py-2.5 text-sm font-bold text-mare-laranja transition hover:bg-mare-laranja hover:text-white disabled:opacity-50"
                                 >
                                     EDITAR PERFIL
                                 </button>
-
                                 <button
                                     type="button"
                                     onClick={sairDaConta}
@@ -409,12 +756,10 @@ export default function PerfilView() {
                             </div>
                         </section>
 
-                        {/* Preferências */}
                         <section className="rounded-[2rem] border border-stone-200 bg-white p-7">
                             <h2 className="font-titulo text-2xl font-bold text-stone-900">
                                 PREFERÊNCIAS
                             </h2>
-
                             <div className="mt-5 space-y-5">
                                 <div>
                                     <h3 className="mb-2 text-sm font-bold uppercase text-mare-rosa">
@@ -424,7 +769,6 @@ export default function PerfilView() {
                                         {preferencias.cidade || "Não definida"}
                                     </p>
                                 </div>
-
                                 <div>
                                     <h3 className="mb-2 text-sm font-bold uppercase text-mare-rosa">
                                         INTERESSES
@@ -434,39 +778,45 @@ export default function PerfilView() {
                                     </p>
                                 </div>
                             </div>
-
                             <button
                                 type="button"
                                 onClick={abrirEditor}
-                                className="mt-5 text-sm font-bold text-mare-laranja hover:underline"
+                                disabled={carregandoPerfil}
+                                className="mt-5 text-sm font-bold text-mare-laranja hover:underline disabled:opacity-50"
                             >
                                 Editar preferências
                             </button>
                         </section>
 
-                        {/* Ações da conta */}
                         <section className="space-y-3 rounded-[2rem] bg-orange-600 p-6">
+                            {usuario?.tipo === "ADMIN" && (
+                                <Link
+                                    href="/admin/eventos"
+                                    className="block w-full rounded-xl border-2 border-white bg-violet-700 px-5 py-3 text-center font-titulo text-base font-bold text-white transition hover:bg-violet-800"
+                                >
+                                    PAINEL ADMINISTRATIVO
+                                </Link>
+                            )}
                             <BotaoAcao onClick={abrirAvisoSenha}>
                                 Alterar senha
                             </BotaoAcao>
-
                             <Link
                                 href="/dashboard#favoritos"
                                 className="block w-full rounded-xl bg-mare-creme px-5 py-3 text-center font-titulo text-base font-bold text-stone-900 transition hover:brightness-95"
                             >
                                 Meus Favoritos
                             </Link>
-
-                            <BotaoAcao onClick={sairDaConta} variante="vermelho">
+                            <BotaoAcao
+                                onClick={sairDaConta}
+                                variante="vermelho"
+                            >
                                 Sair da conta
                             </BotaoAcao>
                         </section>
                     </aside>
 
-                    {/* Coluna direita */}
                     <div className="min-w-0 space-y-8">
-                        {/* Banner de divulgação */}
-                        {bannerVisivel && (
+                        {bannerVisivel && podeDivulgar && (
                             <section className="flex min-h-36 items-center justify-between gap-6 rounded-[2rem] bg-violet-600 px-8 py-7 text-white shadow-lg shadow-violet-900/20">
                                 <div>
                                     <h2 className="font-titulo text-2xl font-bold">
@@ -476,7 +826,6 @@ export default function PerfilView() {
                                         Seja vencedor divulgando seus eventos na nossa plataforma!
                                     </p>
                                 </div>
-
                                 <button
                                     type="button"
                                     onClick={abrirAvisoDivulgacao}
@@ -484,15 +833,19 @@ export default function PerfilView() {
                                 >
                                     BRILHAR
                                 </button>
+                                <Link
+                                    href="/meus-eventos"
+                                    className="shrink-0 rounded-2xl border-2 border-white px-6 py-4 text-center font-titulo text-sm font-bold text-white transition hover:bg-white hover:text-violet-600"
+                                >
+                                    MEUS EVENTOS
+                                </Link>
                             </section>
                         )}
 
-                        {/* Histórico */}
                         <section>
                             <h2 className="font-titulo mb-5 text-3xl font-bold text-stone-900">
                                 HISTÓRICO DE EVENTOS PARTICIPADOS
                             </h2>
-
                             <div className="rounded-2xl border border-stone-200 bg-white px-6 py-10 text-center">
                                 <IconeCalendario
                                     size={36}
@@ -502,8 +855,7 @@ export default function PerfilView() {
                                     Seu histórico aparecerá aqui
                                 </p>
                                 <p className="mx-auto mt-2 max-w-md text-sm text-stone-500">
-                                    Quando suas participações em eventos estiverem registradas na
-                                    plataforma, você poderá consultar todas por aqui.
+                                    Quando suas participações em eventos estiverem registradas na plataforma, você poderá consultar todas por aqui.
                                 </p>
                                 <Link
                                     href="/explorar"
@@ -514,13 +866,27 @@ export default function PerfilView() {
                             </div>
                         </section>
 
-                        {/* Eventos marcados: favoritos reais */}
+                        {/* EVENTOS MARCADOS - DESKTOP */}
                         <section>
                             <h2 className="font-titulo mb-5 text-3xl font-bold text-stone-900">
                                 EVENTOS MARCADOS
                             </h2>
 
-                            {eventosMarcados.length === 0 ? (
+                            {carregandoEventosMarcados ? (
+                                <p
+                                    role="status"
+                                    className="rounded-2xl border border-stone-200 bg-white p-8 text-center text-sm text-stone-500"
+                                >
+                                    Carregando seus eventos marcados...
+                                </p>
+                            ) : erroEventosMarcados ? (
+                                <p
+                                    role="alert"
+                                    className="rounded-2xl border border-red-200 bg-white p-8 text-center text-sm text-red-700"
+                                >
+                                    {erroEventosMarcados}
+                                </p>
+                            ) : eventosMarcados.length === 0 ? (
                                 <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center">
                                     <IconeCoracao
                                         size={34}
@@ -557,7 +923,6 @@ export default function PerfilView() {
                                                 <h3 className="font-titulo text-lg font-bold leading-tight">
                                                     {evento.titulo}
                                                 </h3>
-
                                                 <p className="mt-1 text-xs text-stone-500">
                                                     <IconeCalendario
                                                         size={12}
@@ -565,24 +930,31 @@ export default function PerfilView() {
                                                     />
                                                     {evento.data} • {evento.hora}
                                                 </p>
-
                                                 <p className="mt-1 text-xs text-stone-500">
-                                                    <IconePino size={12} className="mr-1 inline" />
-                                                    {evento.local}, {evento.cidade}
+                                                    <IconePino
+                                                        size={12}
+                                                        className="mr-1 inline"
+                                                    />
+                                                    {evento.local}
+                                                    {evento.cidade
+                                                        ? `, ${evento.cidade}`
+                                                        : ""}
                                                 </p>
                                             </div>
 
                                             <span className="hidden rounded-full bg-emerald-100 px-4 py-2 text-xs font-bold text-emerald-700 sm:inline">
-                                                SALVO
+                                                MARCADO
                                             </span>
 
                                             <button
                                                 type="button"
-                                                aria-label={`Remover ${evento.titulo} dos favoritos`}
-                                                onClick={() => alternarFavorito(evento.id)}
-                                                className="grid size-10 shrink-0 place-items-center rounded-full border border-mare-rosa text-mare-rosa transition hover:bg-mare-rosa hover:text-white"
+                                                aria-label={`Desmarcar ${evento.titulo} dos eventos marcados`}
+                                                onClick={() =>
+                                                    void alternarEventoMarcado(evento.id)
+                                                }
+                                                className="grid size-10 shrink-0 place-items-center rounded-full border border-emerald-600 text-emerald-700 transition hover:bg-emerald-600 hover:text-white"
                                             >
-                                                <IconeCoracao size={18} ativo />
+                                                <IconeCalendario size={18} />
                                             </button>
                                         </article>
                                     ))}
@@ -595,14 +967,18 @@ export default function PerfilView() {
 
             {/* ===================== MOBILE ===================== */}
             <div className="lg:hidden">
-                {/* Cabeçalho */}
                 <header className="relative rounded-br-[5rem] bg-orange-600 px-6 pb-8 pt-6 text-white">
                     <div className="flex items-center justify-between">
-                        <Link href="/dashboard" className="flex items-center gap-2">
+                        <Link
+                            href="/dashboard"
+                            className="flex items-center gap-2"
+                        >
                             <span className="grid size-9 place-items-center rounded-xl bg-white text-lg font-extrabold text-orange-600">
                                 M
                             </span>
-                            <span className="font-titulo text-lg font-bold">Maré LN</span>
+                            <span className="font-titulo text-lg font-bold">
+                                Maré LN
+                            </span>
                         </Link>
 
                         <button
@@ -645,14 +1021,12 @@ export default function PerfilView() {
                             >
                                 Explorar
                             </Link>
-
                             <Link
                                 href="/mapa"
                                 className="block rounded-xl px-4 py-3 text-sm hover:bg-stone-50"
                             >
                                 Mapa
                             </Link>
-
                             <Link
                                 href="/dashboard#favoritos-mobile"
                                 className="block rounded-xl px-4 py-3 text-sm hover:bg-stone-50"
@@ -668,28 +1042,31 @@ export default function PerfilView() {
                             onClick={abrirEditor}
                             aria-label="Editar foto e perfil"
                             className="rounded-full"
+                            disabled={carregandoPerfil}
                         >
-                            <Avatar foto={fotoUrl} nome={nome} tamanho="size-32" />
+                            <Avatar
+                                foto={fotoUrl}
+                                nome={nome}
+                                tamanho="size-32"
+                            />
                         </button>
 
                         <div className="min-w-0">
                             <h1 className="font-titulo text-2xl font-bold uppercase leading-tight">
                                 {nome}
                             </h1>
-
                             <p className="mt-1 break-all text-xs text-white/80">
                                 {email}
                             </p>
-
                             <div className="mt-3 flex flex-wrap gap-2">
                                 <button
                                     type="button"
                                     onClick={abrirEditor}
-                                    className="rounded-full bg-mare-creme px-4 py-2 font-titulo text-sm font-bold text-stone-900"
+                                    disabled={carregandoPerfil}
+                                    className="rounded-full bg-mare-creme px-4 py-2 font-titulo text-sm font-bold text-stone-900 disabled:opacity-50"
                                 >
                                     EDITAR
                                 </button>
-
                                 <button
                                     type="button"
                                     onClick={sairDaConta}
@@ -702,15 +1079,11 @@ export default function PerfilView() {
                     </div>
                 </header>
 
-                {/* Banner mobile */}
-                {bannerVisivel && (
+                {bannerVisivel && podeDivulgar && (
                     <section className="relative mt-6 flex items-center justify-between gap-3 bg-violet-600 px-5 py-4 text-white">
                         <p className="font-titulo text-base leading-tight">
-                            GOSTARIA DE DIVULGAR
-                            <br />
-                            SEUS EVENTOS?
+                            GOSTARIA DE DIVULGAR<br />SEUS EVENTOS?
                         </p>
-
                         <button
                             type="button"
                             onClick={abrirAvisoDivulgacao}
@@ -718,7 +1091,12 @@ export default function PerfilView() {
                         >
                             DIVULGAR
                         </button>
-
+                        <Link
+                            href="/meus-eventos"
+                            className="shrink-0 rounded-full border border-white px-3 py-2 text-xs font-bold text-white"
+                        >
+                            MEUS EVENTOS
+                        </Link>
                         <button
                             type="button"
                             aria-label="Fechar banner"
@@ -731,12 +1109,10 @@ export default function PerfilView() {
                 )}
 
                 <div className="space-y-10 px-5 pb-8 pt-7">
-                    {/* Preferências */}
                     <section>
                         <h2 className="font-titulo mb-5 text-2xl font-bold">
                             PREFERÊNCIAS
                         </h2>
-
                         <div className="space-y-5">
                             <div className="flex min-h-16 items-center justify-between gap-3 rounded-xl border border-mare-rosa px-4 py-3">
                                 <span className="font-titulo text-lg font-bold text-mare-rosa">
@@ -760,18 +1136,17 @@ export default function PerfilView() {
                         <button
                             type="button"
                             onClick={abrirEditor}
-                            className="mt-4 text-sm font-bold text-mare-laranja"
+                            disabled={carregandoPerfil}
+                            className="mt-4 text-sm font-bold text-mare-laranja disabled:opacity-50"
                         >
                             Editar preferências
                         </button>
                     </section>
 
-                    {/* Histórico */}
                     <section>
                         <h2 className="font-titulo mb-5 text-2xl font-bold">
                             HISTÓRICO
                         </h2>
-
                         <div className="rounded-2xl bg-white px-5 py-8 text-center shadow-sm">
                             <IconeCalendario
                                 size={32}
@@ -781,8 +1156,7 @@ export default function PerfilView() {
                                 Ainda não há participações
                             </p>
                             <p className="mt-2 text-sm text-stone-500">
-                                Seus eventos participados aparecerão aqui quando forem
-                                registrados na plataforma.
+                                Seus eventos participados aparecerão aqui quando forem registrados na plataforma.
                             </p>
                             <Link
                                 href="/explorar"
@@ -793,13 +1167,27 @@ export default function PerfilView() {
                         </div>
                     </section>
 
-                    {/* Eventos marcados */}
+                    {/* EVENTOS MARCADOS - MOBILE */}
                     <section>
                         <h2 className="font-titulo mb-5 text-2xl font-bold">
                             EVENTOS MARCADOS
                         </h2>
 
-                        {eventosMarcados.length === 0 ? (
+                        {carregandoEventosMarcados ? (
+                            <p
+                                role="status"
+                                className="rounded-2xl bg-white p-6 text-center text-sm text-stone-500 shadow-sm"
+                            >
+                                Carregando seus eventos marcados...
+                            </p>
+                        ) : erroEventosMarcados ? (
+                            <p
+                                role="alert"
+                                className="rounded-2xl border border-red-200 bg-white p-6 text-center text-sm text-red-700 shadow-sm"
+                            >
+                                {erroEventosMarcados}
+                            </p>
+                        ) : eventosMarcados.length === 0 ? (
                             <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
                                 <p className="font-titulo font-bold">
                                     Nenhum evento salvo ainda.
@@ -836,20 +1224,23 @@ export default function PerfilView() {
                                                 {evento.data} • {evento.hora}
                                             </p>
                                             <p className="mt-1 text-xs text-stone-500">
-                                                {evento.local}, {evento.cidade}
+                                                {evento.local}
+                                                {evento.cidade
+                                                    ? `, ${evento.cidade}`
+                                                    : ""}
                                             </p>
                                             <span className="mt-2 inline-block rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-700">
-                                                SALVO
+                                                MARCADO
                                             </span>
                                         </div>
 
                                         <button
                                             type="button"
-                                            aria-label={`Remover ${evento.titulo} dos favoritos`}
-                                            onClick={() => alternarFavorito(evento.id)}
-                                            className="grid size-11 shrink-0 place-items-center rounded-full border border-mare-rosa text-mare-rosa"
+                                            aria-label={`Desmarcar ${evento.titulo} dos eventos marcados`}
+                                            onClick={() => void alternarEventoMarcado(evento.id)}
+                                            className="grid size-11 shrink-0 place-items-center rounded-full border border-emerald-600 text-emerald-700 transition hover:bg-emerald-600 hover:text-white"
                                         >
-                                            <IconeCoracao size={22} ativo />
+                                            <IconeCalendario size={22} />
                                         </button>
                                     </article>
                                 ))}
@@ -858,25 +1249,29 @@ export default function PerfilView() {
                     </section>
                 </div>
 
-                {/* Ações da conta */}
                 <section className="space-y-4 bg-orange-600 px-6 py-8">
+                    {usuario?.tipo === "ADMIN" && (
+                        <Link
+                            href="/admin/eventos"
+                            className="block w-full rounded-xl border-2 border-white bg-violet-700 px-5 py-3 text-center font-titulo text-base font-bold text-white transition hover:bg-violet-800"
+                        >
+                            PAINEL ADMINISTRATIVO
+                        </Link>
+                    )}
                     <BotaoAcao onClick={abrirAvisoSenha}>
                         Alterar senha
                     </BotaoAcao>
-
                     <Link
                         href="/dashboard#favoritos-mobile"
                         className="block w-full rounded-xl bg-mare-creme px-5 py-3 text-center font-titulo text-base font-bold text-stone-900"
                     >
                         Favoritos
                     </Link>
-
                     <BotaoAcao onClick={sairDaConta} variante="vermelho">
                         Sair da conta
                     </BotaoAcao>
                 </section>
 
-                {/* Navegação inferior */}
                 <nav
                     aria-label="Navegação principal"
                     className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
@@ -897,10 +1292,11 @@ export default function PerfilView() {
                                 <Link
                                     href={href}
                                     aria-current={label === "Perfil" ? "page" : undefined}
-                                    className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${label === "Perfil"
-                                        ? "font-bold text-mare-laranja"
-                                        : "text-stone-400"
-                                        }`}
+                                    className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${
+                                        label === "Perfil"
+                                            ? "font-bold text-mare-laranja"
+                                            : "text-stone-400"
+                                    }`}
                                 >
                                     <Icone size={22} />
                                     {label}
@@ -927,7 +1323,6 @@ export default function PerfilView() {
                             >
                                 Editar perfil
                             </h2>
-
                             <button
                                 type="button"
                                 onClick={fecharEditor}
@@ -939,19 +1334,17 @@ export default function PerfilView() {
                         </div>
 
                         <form onSubmit={salvarPerfil} className="mt-5 space-y-5">
-                            {/* Foto */}
                             <div className="flex flex-col items-center gap-3">
                                 <Avatar
                                     foto={fotoNoEditor}
                                     nome={nome}
                                     tamanho="size-28"
                                 />
-
                                 <label className="cursor-pointer rounded-full border border-mare-laranja px-5 py-2 text-sm font-bold text-mare-laranja hover:bg-mare-laranja hover:text-white">
                                     Escolher foto
                                     <input
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/jpeg,image/png,image/webp"
                                         onChange={selecionarFoto}
                                         className="sr-only"
                                     />
@@ -976,7 +1369,6 @@ export default function PerfilView() {
                                 </p>
                             </div>
 
-                            {/* Nome */}
                             <div>
                                 <label
                                     htmlFor="perfil-nome"
@@ -988,14 +1380,34 @@ export default function PerfilView() {
                                     id="perfil-nome"
                                     type="text"
                                     value={nomeRascunho}
-                                    onChange={(event) => setNomeRascunho(event.target.value)}
+                                    onChange={(event) =>
+                                        setNomeRascunho(event.target.value)
+                                    }
                                     maxLength={60}
                                     required
                                     className="w-full rounded-xl border border-stone-300 px-4 py-3 outline-none focus:border-mare-laranja"
                                 />
                             </div>
 
-                            {/* Cidade */}
+                            <div>
+                                <label
+                                    htmlFor="perfil-email"
+                                    className="mb-2 block text-sm font-bold text-stone-700"
+                                >
+                                    E-mail
+                                </label>
+                                <input
+                                    id="perfil-email"
+                                    type="email"
+                                    value={email}
+                                    readOnly
+                                    className="w-full cursor-not-allowed rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-stone-500 outline-none"
+                                />
+                                <p className="mt-1 text-xs text-stone-400">
+                                    O e-mail da conta não pode ser alterado por esta tela.
+                                </p>
+                            </div>
+
                             <div>
                                 <label
                                     htmlFor="perfil-cidade"
@@ -1007,7 +1419,9 @@ export default function PerfilView() {
                                     id="perfil-cidade"
                                     value={cidadeRascunho}
                                     onChange={(event) =>
-                                        setCidadeRascunho(event.target.value as Cidade | "")
+                                        setCidadeRascunho(
+                                            event.target.value as Cidade | "",
+                                        )
                                     }
                                     className="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 outline-none focus:border-mare-laranja"
                                 >
@@ -1020,12 +1434,10 @@ export default function PerfilView() {
                                 </select>
                             </div>
 
-                            {/* Interesses */}
                             <fieldset>
                                 <legend className="mb-3 text-sm font-bold text-stone-700">
                                     Interesses
                                 </legend>
-
                                 <div className="grid grid-cols-2 gap-2">
                                     {categorias.map((categoria) => (
                                         <label
@@ -1034,8 +1446,12 @@ export default function PerfilView() {
                                         >
                                             <input
                                                 type="checkbox"
-                                                checked={interessesRascunho.includes(categoria)}
-                                                onChange={() => alternarInteresse(categoria)}
+                                                checked={interessesRascunho.includes(
+                                                    categoria,
+                                                )}
+                                                onChange={() =>
+                                                    alternarInteresse(categoria)
+                                                }
                                                 className="accent-mare-laranja"
                                             />
                                             {nomesCategorias[categoria]}
@@ -1045,7 +1461,10 @@ export default function PerfilView() {
                             </fieldset>
 
                             {erro && (
-                                <p role="alert" className="text-sm font-semibold text-red-600">
+                                <p
+                                    role="alert"
+                                    className="text-sm font-semibold text-red-600"
+                                >
                                     {erro}
                                 </p>
                             )}
@@ -1055,17 +1474,18 @@ export default function PerfilView() {
                                     type="button"
                                     onClick={fecharEditor}
                                     disabled={salvando}
-                                    className="flex-1 rounded-xl border border-stone-300 px-4 py-3 text-sm font-bold text-stone-600"
+                                    className="flex-1 rounded-xl border border-stone-300 px-4 py-3 text-sm font-bold text-stone-600 disabled:opacity-60"
                                 >
                                     Cancelar
                                 </button>
-
                                 <button
                                     type="submit"
                                     disabled={salvando}
                                     className="flex-1 rounded-xl bg-mare-laranja px-4 py-3 text-sm font-bold text-white disabled:opacity-60"
                                 >
-                                    {salvando ? "Salvando..." : "Salvar alterações"}
+                                    {salvando
+                                        ? "Salvando..."
+                                        : "Salvar alterações"}
                                 </button>
                             </div>
                         </form>
@@ -1073,7 +1493,6 @@ export default function PerfilView() {
                 </div>
             )}
 
-            {/* Avisos de recursos ainda não integrados */}
             {aviso && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
                     <section
@@ -1088,11 +1507,9 @@ export default function PerfilView() {
                         >
                             Maré LN
                         </h2>
-
                         <p className="mt-3 text-sm leading-relaxed text-stone-600">
                             {aviso}
                         </p>
-
                         <button
                             type="button"
                             onClick={() => setAviso(null)}

@@ -1,19 +1,26 @@
+
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { eventos } from "@/data/eventos";
+import {
+  listarEventos,
+  type EventoExplorar,
+} from "@/lib/eventos-api";
+
 import { useFavoritos } from "@/lib/favoritos";
 import { useSessao } from "@/lib/usuario";
 
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
 import CabecalhoMobile from "@/components/explorar/CabecalhoMobile";
+
 import {
   BotaoFavorito,
   LinkDetalhesEvento,
 } from "@/components/dashboard/partes";
+
 import {
   IconeBusca,
   IconeCoracao,
@@ -34,15 +41,66 @@ const abas = [
 
 export default function FavoritosView() {
   const { usuario } = useSessao();
-  const { favoritos, alternarFavorito } = useFavoritos();
+
+  const {
+    favoritos,
+    alternarFavorito,
+    carregandoFavoritos,
+    erroFavoritos,
+  } = useFavoritos();
+
+  const [eventos, setEventos] = useState<EventoExplorar[]>([]);
+  const [carregandoEventos, setCarregandoEventos] = useState(true);
+  const [erroEventos, setErroEventos] = useState<string | null>(null);
 
   const [quantidadeVisivel, setQuantidadeVisivel] =
     useState(QUANTIDADE_INICIAL);
 
+  // Busca os eventos publicados no backend.
+  useEffect(() => {
+    let ativo = true;
+
+    async function carregarEventos() {
+      setCarregandoEventos(true);
+      setErroEventos(null);
+
+      try {
+        const resposta = await listarEventos();
+
+        if (ativo) {
+          setEventos(resposta);
+        }
+      } catch (erro) {
+        if (ativo) {
+          setErroEventos(
+            erro instanceof Error
+              ? erro.message
+              : "Não foi possível carregar os eventos.",
+          );
+        }
+      } finally {
+        if (ativo) {
+          setCarregandoEventos(false);
+        }
+      }
+    }
+
+    void carregarEventos();
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  // Cruza os eventos publicados com os IDs favoritos da conta.
   const meusFavoritos = eventos.filter((evento) =>
     favoritos.includes(evento.id),
   );
+
   const eventosVisiveis = meusFavoritos.slice(0, quantidadeVisivel);
+
+  const carregando = carregandoEventos || carregandoFavoritos;
+  const erro = erroEventos ?? erroFavoritos;
 
   return (
     <div className="mx-auto w-full max-w-xl pb-24 lg:max-w-7xl lg:px-6 lg:py-5">
@@ -63,23 +121,64 @@ export default function FavoritosView() {
           <h1 className="font-titulo text-2xl uppercase tracking-wide text-mare-rosa lg:text-3xl">
             Meus favoritos
           </h1>
+
           <p className="mt-2 text-xs text-stone-600 lg:text-sm">
             Eventos que você salvou para não perder.
           </p>
         </header>
 
-        {meusFavoritos.length === 0 ? (
+        {carregando ? (
+          <section
+            role="status"
+            className="rounded-2xl bg-white px-6 py-14 text-center shadow-sm"
+          >
+            <p className="font-semibold text-stone-700">
+              Carregando seus favoritos...
+            </p>
+            <p className="mt-2 text-sm text-stone-500">
+              Buscando seus eventos salvos.
+            </p>
+          </section>
+        ) : erro ? (
+          <section
+            role="alert"
+            className="rounded-2xl bg-white px-6 py-12 text-center shadow-sm"
+          >
+            <div className="mx-auto grid size-16 place-items-center rounded-full bg-rose-50">
+              <IconeCoracao size={30} className="text-mare-rosa" />
+            </div>
+
+            <h2 className="font-titulo mt-5 text-xl">
+              Não foi possível carregar seus favoritos
+            </h2>
+
+            <p className="mt-2 text-sm text-stone-500">
+              {erro}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-6 rounded-xl bg-mare-laranja px-6 py-3 text-sm font-bold text-white transition hover:opacity-90"
+            >
+              Tentar novamente
+            </button>
+          </section>
+        ) : meusFavoritos.length === 0 ? (
           <section className="rounded-2xl bg-white px-6 py-14 text-center shadow-sm">
             <div className="mx-auto grid size-16 place-items-center rounded-full bg-rose-50">
               <IconeCoracao size={30} className="text-mare-rosa" />
             </div>
+
             <h2 className="font-titulo mt-5 text-xl">
               Nenhum favorito por enquanto
             </h2>
+
             <p className="mx-auto mt-2 max-w-sm text-sm text-stone-500">
               Explore os eventos do Litoral Norte e toque no coração para
               salvar aqueles que você não quer perder.
             </p>
+
             <Link
               href="/explorar"
               className="mt-6 inline-flex rounded-xl bg-mare-laranja px-6 py-3 text-sm font-bold text-white transition hover:opacity-90"
@@ -109,14 +208,19 @@ export default function FavoritosView() {
                     <p className="text-[10px] font-bold uppercase tracking-wide text-mare-rosa">
                       {evento.categoria}
                     </p>
+
                     <h2 className="font-card mt-1 line-clamp-2 text-base font-bold leading-tight lg:text-lg">
                       {evento.titulo}
                     </h2>
+
                     <p className="mt-2 text-[11px] text-stone-500 lg:text-xs">
                       {evento.data} • {evento.hora}
                     </p>
+
                     <p className="mt-1 text-[11px] leading-relaxed text-stone-500 lg:text-xs">
-                      {evento.local}, {evento.cidade}
+                      {evento.cidade
+                        ? `${evento.local}, ${evento.cidade}`
+                        : evento.local}
                     </p>
                   </div>
 
@@ -126,6 +230,7 @@ export default function FavoritosView() {
                     onAlternar={alternarFavorito}
                     className="absolute right-3 top-3 shadow-sm"
                   />
+
                   <LinkDetalhesEvento evento={evento} />
                 </li>
               ))}
@@ -157,13 +262,16 @@ export default function FavoritosView() {
         <ul className="mx-auto flex max-w-xl items-stretch justify-around">
           {abas.map(({ href, label, Icone }) => {
             const ativo = label === "Favoritos";
+
             return (
               <li key={label} className="flex-1">
                 <Link
                   href={href}
                   aria-current={ativo ? "page" : undefined}
                   className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${
-                    ativo ? "font-bold text-mare-laranja" : "text-stone-400"
+                    ativo
+                      ? "font-bold text-mare-laranja"
+                      : "text-stone-400"
                   }`}
                 >
                   <Icone size={22} />
