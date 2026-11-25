@@ -9,7 +9,7 @@ import { lerUsuario } from "@/lib/usuario";
 const links = [
   { texto: "Início", href: "/" },
   { texto: "Eventos", href: "/explorar" },
-  { texto: "Sobre", href: "/#sobre" },
+  { texto: "Sobre", href: "/sobre" },
   { texto: "Contato", href: "/#contato" },
 ];
 
