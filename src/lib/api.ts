@@ -139,6 +139,10 @@ export async function apiRequest<T>(
     "auth/login",
     "auth/register",
     "auth/refresh",
+    "auth/recuperar-senha",
+    "auth/redefinir-senha",
+    "auth/forgot-password",
+    "auth/reset-password",
   ];
 
   // Tenta renovar o token somente quando uma rota protegida
@@ -265,3 +269,28 @@ export async function apiUpload<T>(
 
   return dados as T;
 }
+
+export async function solicitarRecuperacaoSenha(email: string): Promise<{
+  mensagem: string;
+  email: string;
+  token?: string;
+}> {
+  return apiRequest<{ mensagem: string; email: string; token?: string }>(
+    "auth/recuperar-senha",
+    {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    },
+  );
+}
+
+export async function redefinirSenhaComToken(
+  token: string,
+  novaSenha: string,
+): Promise<{ mensagem: string }> {
+  return apiRequest<{ mensagem: string }>("auth/redefinir-senha", {
+    method: "POST",
+    body: JSON.stringify({ token, novaSenha }),
+  });
+}
+

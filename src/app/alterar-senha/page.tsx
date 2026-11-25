@@ -1,4 +1,4 @@
-
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { AlterarSenhaForm } from "@/components/auth/PasswordForms";
 
@@ -7,5 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default function AlterarSenhaPage() {
-  return <AlterarSenhaForm />;
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#f7f9fc]" />}>
+      <AlterarSenhaForm />
+    </Suspense>
+  );
 }

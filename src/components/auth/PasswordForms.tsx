@@ -4,6 +4,12 @@
 import "@flaticon/flaticon-uicons/css/regular/rounded.css";
 import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+
+import {
+  solicitarRecuperacaoSenha,
+  redefinirSenhaComToken,
+} from "@/lib/api";
 
 import SeagullsBg from "./SeagullsBg";
 import {
@@ -203,10 +209,14 @@ function PasswordShell({
 export function RecuperarSenhaForm() {
   const [email, setEmail] = useState("");
   const [erro, setErro] = useState("");
-  const [solicitacaoDemonstrativa, setSolicitacaoDemonstrativa] =
-    useState(false);
+  const [carregando, setCarregando] = useState(false);
+  const [resultado, setResultado] = useState<{
+    mensagem: string;
+    token?: string;
+    email: string;
+  } | null>(null);
 
-  function enviarSolicitacao(event: FormEvent<HTMLFormElement>) {
+  async function enviarSolicitacao(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const emailLimpo = email.trim();
@@ -222,7 +232,26 @@ export function RecuperarSenhaForm() {
     }
 
     setErro("");
-    setSolicitacaoDemonstrativa(true);
+    setCarregando(true);
+
+    try {
+      const data = await solicitarRecuperacaoSenha(emailLimpo);
+      setResultado({
+        mensagem:
+          data.mensagem ||
+          "Solicitação de recuperação registrada com sucesso.",
+        token: data.token,
+        email: emailLimpo,
+      });
+    } catch (error) {
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível solicitar a recuperação. Tente novamente.",
+      );
+    } finally {
+      setCarregando(false);
+    }
   }
 
   return (
@@ -231,25 +260,24 @@ export function RecuperarSenhaForm() {
       subtitulo="Informe o e-mail da sua conta para iniciar o processo de recuperação de senha."
       icone="email"
     >
-      {solicitacaoDemonstrativa ? (
+      {resultado ? (
         <div
           role="status"
           className="rounded-2xl border border-orange-200 bg-orange-50 p-5 text-center"
         >
           <h2 className="font-titulo text-lg font-bold text-mare-laranja">
-            Solicitação demonstrativa registrada
+            Solicitação registrada!
           </h2>
 
           <p className="mt-3 text-sm leading-relaxed text-stone-600">
-            O envio de e-mail ainda não está ativo. Essa funcionalidade será
-            conectada ao backend posteriormente.
+            {resultado.mensagem}
           </p>
 
           <Link
-            href="/alterar-senha"
-            className="mt-5 inline-block font-semibold text-mare-laranja underline underline-offset-4"
+            href={`/alterar-senha?token=${encodeURIComponent(resultado.token || "")}&email=${encodeURIComponent(resultado.email)}`}
+            className="mt-5 inline-block rounded-xl bg-mare-laranja px-6 py-3 font-bold text-white shadow-md hover:bg-mare-laranja/90 transition"
           >
-            Visualizar a tela de alteração de senha
+            Definir nova senha agora
           </Link>
         </div>
       ) : (
@@ -305,13 +333,14 @@ export function RecuperarSenhaForm() {
 
           <button
             type="submit"
-            className="rounded-2xl bg-mare-laranja/20 px-5 py-4 font-titulo text-base font-bold text-mare-laranja underline underline-offset-4 transition hover:bg-mare-laranja hover:text-white"
+            disabled={carregando}
+            className="rounded-2xl bg-mare-laranja px-5 py-4 font-titulo text-base font-bold text-white shadow-md transition hover:bg-mare-laranja/90 disabled:opacity-50"
           >
-            Solicitar recuperação
+            {carregando ? "Enviando..." : "Solicitar recuperação"}
           </button>
 
           <p className="text-center text-xs text-stone-500">
-            Precisa de ajuda?{" "}
+            Lembrou sua senha?{" "}
             <Link
               href="/login"
               className="font-semibold text-mare-laranja underline underline-offset-2"
@@ -357,23 +386,31 @@ function analisarForca(senha: string) {
 }
 
 export function AlterarSenhaForm() {
+  const searchParams = useSearchParams();
+  const tokenParam = searchParams.get("token") || "";
+  const emailParam = searchParams.get("email") || "";
+
+  const [token, setToken] = useState(tokenParam);
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
   const [erro, setErro] = useState("");
-  const [validacaoDemonstrativa, setValidacaoDemonstrativa] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+  const [concluido, setConcluido] = useState(false);
 
   const forca = analisarForca(senha);
 
-  function atualizarSenha(event: FormEvent<HTMLFormElement>) {
+  async function atualizarSenha(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (senha.length < 8) {
-      setErro("A senha precisa ter pelo menos 8 caracteres.");
+    const tokenFinal = (token || tokenParam).trim();
+
+    if (!tokenFinal) {
+      setErro("Token de recuperação ausente. Solicite a recuperação novamente.");
       return;
     }
 
-    if (!/[A-Za-zÀ-ÿ]/.test(senha) || !/\d/.test(senha) || !/[^A-Za-zÀ-ÿ0-9]/.test(senha)) {
-      setErro("Use letras, números e pelo menos um símbolo.");
+    if (senha.length < 8) {
+      setErro("A senha precisa ter pelo menos 8 caracteres.");
       return;
     }
 
@@ -383,35 +420,51 @@ export function AlterarSenhaForm() {
     }
 
     setErro("");
-    setValidacaoDemonstrativa(true);
+    setCarregando(true);
+
+    try {
+      await redefinirSenhaComToken(tokenFinal, senha);
+      setConcluido(true);
+    } catch (error) {
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Falha ao redefinir senha. Verifique o link e tente novamente.",
+      );
+    } finally {
+      setCarregando(false);
+    }
   }
 
   return (
     <PasswordShell
       titulo="Alterar Senha"
-      subtitulo="Escolha uma nova senha forte que você ainda não usa."
+      subtitulo={
+        emailParam
+          ? `Defina sua nova senha para ${emailParam}.`
+          : "Escolha uma nova senha forte que você ainda não usa."
+      }
       icone="senha"
     >
-      {validacaoDemonstrativa ? (
+      {concluido ? (
         <div
           role="status"
-          className="rounded-2xl border border-orange-200 bg-orange-50 p-5 text-center"
+          className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center"
         >
-          <h2 className="font-titulo text-lg font-bold text-mare-laranja">
-            Validação concluída
+          <h2 className="font-titulo text-lg font-bold text-emerald-700">
+            Senha redefinida com sucesso!
           </h2>
 
           <p className="mt-3 text-sm leading-relaxed text-stone-600">
-            Os campos foram validados, mas nenhuma senha foi alterada. A
-            atualização real será ativada quando a autenticação estiver
-            integrada ao backend.
+            Sua nova senha foi atualizada. Agora você pode entrar com as novas
+            credenciais.
           </p>
 
           <Link
             href="/login"
-            className="mt-5 inline-block rounded-xl bg-mare-laranja px-6 py-3 font-bold text-white"
+            className="mt-5 inline-block rounded-xl bg-mare-laranja px-6 py-3 font-bold text-white shadow-md hover:bg-mare-laranja/90 transition"
           >
-            Voltar para o login
+            Ir para o login
           </Link>
         </div>
       ) : (
@@ -420,6 +473,29 @@ export function AlterarSenhaForm() {
           noValidate
           className="flex flex-col gap-5"
         >
+          {!tokenParam && (
+            <div>
+              <label
+                htmlFor="token-recuperacao"
+                className="mb-2 block text-sm font-bold text-stone-700"
+              >
+                Código / Token de recuperação
+              </label>
+
+              <div className="flex items-center gap-3 rounded-2xl border-2 border-mare-laranja bg-white px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-mare-laranja/20">
+                <input
+                  id="token-recuperacao"
+                  name="token"
+                  type="text"
+                  value={token}
+                  onChange={(event) => setToken(event.target.value)}
+                  placeholder="Cole o token de recuperação"
+                  className="min-w-0 flex-1 bg-transparent text-sm text-stone-800 outline-none placeholder:text-mare-laranja/70"
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label
               htmlFor="nova-senha"
@@ -538,9 +614,10 @@ export function AlterarSenhaForm() {
 
           <button
             type="submit"
-            className="rounded-2xl bg-mare-laranja/20 px-5 py-4 font-titulo text-base font-bold text-mare-laranja underline underline-offset-4 transition hover:bg-mare-laranja hover:text-white"
+            disabled={carregando}
+            className="rounded-2xl bg-mare-laranja px-5 py-4 font-titulo text-base font-bold text-white shadow-md transition hover:bg-mare-laranja/90 disabled:opacity-50"
           >
-            Validar nova senha
+            {carregando ? "Salvando..." : "Salvar nova senha"}
           </button>
 
           <div className="border-t border-stone-300 pt-4">
